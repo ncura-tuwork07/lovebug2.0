@@ -3,13 +3,28 @@
 /* Lovebug siempre usa un tema claro y cálido, sin adaptarse al modo oscuro del sistema. */
 :root {
   color-scheme: light;
-  --background: #fff1f2;
+  --background: #fff8f1;
   --foreground: #1e293b;
+
+  /* Paleta de marca (manual de marca Lovebug) */
+  --brand-primary: #ff5a5f; /* energía / familia */
+  --brand-secondary: #ffb347; /* alegría / optimismo */
+  --brand-ink: #1e293b; /* confianza / claridad */
+  --brand-success: #10b981; /* crecimiento / metas */
+  --brand-info: #3b82f6; /* equilibrio / calma */
+  --brand-surface: #e5e7eb; /* limpieza / orden */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--brand-primary);
+  --color-secondary: var(--brand-secondary);
+  --color-ink: var(--brand-ink);
+  --color-success: var(--brand-success);
+  --color-info: var(--brand-info);
+  --color-surface: var(--brand-surface);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-baloo);
 }

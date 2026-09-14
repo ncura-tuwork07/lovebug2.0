@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/is-configured";
+import { Logo } from "@/components/Logo";
 
 const displayNames: Record<string, string> = {
   "nazacura95@gmail.com": "Nazareno",
@@ -25,7 +26,11 @@ export function Header() {
 
   return (
     <div className="flex items-center justify-between px-4 pt-4">
-      <span className="text-sm font-semibold text-rose-400">Lovebug 💕</span>
+      <span className="flex items-center gap-1.5 font-display text-lg font-bold">
+        <Logo size={22} />
+        <span className="text-ink">Love</span>
+        <span className="text-primary">bug</span>
+      </span>
       {email && (
         <button
           type="button"
@@ -33,7 +38,7 @@ export function Header() {
             await createClient().auth.signOut();
             window.location.href = "/login";
           }}
-          className="flex items-center gap-1 text-xs text-slate-400"
+          className="flex items-center gap-1 text-xs text-ink/40"
         >
           {displayNames[email] ?? email}
           <LogOut size={14} />

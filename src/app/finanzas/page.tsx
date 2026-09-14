@@ -21,42 +21,42 @@ export default function FinanzasPage() {
   return (
     <div className="flex flex-col gap-6 px-4 pt-8">
       <header>
-        <p className="text-sm text-rose-400">Nuestra plata</p>
-        <h1 className="text-2xl font-semibold text-slate-900">Finanzas</h1>
+        <p className="text-sm text-primary">Nuestra plata</p>
+        <h1 className="text-2xl font-semibold text-ink">Finanzas</h1>
       </header>
 
       <SetupBanner />
 
       <section className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-white p-4 shadow-sm shadow-rose-100">
-          <p className="text-xs text-slate-400">Gastado este mes</p>
-          <p className="text-lg font-semibold text-slate-800">{formatARS(monthTotal)}</p>
+        <div className="rounded-2xl bg-white p-4 shadow-sm shadow-black/5">
+          <p className="text-xs text-ink/40">Gastado este mes</p>
+          <p className="text-lg font-semibold text-ink">{formatARS(monthTotal)}</p>
         </div>
-        <div className="rounded-2xl bg-white p-4 shadow-sm shadow-rose-100">
-          <p className="text-xs text-slate-400">Gastos fijos</p>
-          <p className="text-lg font-semibold text-slate-800">{formatARS(fixedTotal)}</p>
+        <div className="rounded-2xl bg-white p-4 shadow-sm shadow-black/5">
+          <p className="text-xs text-ink/40">Gastos fijos</p>
+          <p className="text-lg font-semibold text-ink">{formatARS(fixedTotal)}</p>
         </div>
       </section>
 
-      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-rose-100">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-rose-500">
+      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-black/5">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">
           Últimos gastos
         </h2>
         <ul className="flex flex-col gap-3">
           {demoExpenses.map((expense) => (
             <li key={expense.id} className="flex items-center justify-between text-sm">
               <div>
-                <p className="text-slate-700">{expense.description}</p>
-                <p className="text-xs text-slate-400">{expense.who}</p>
+                <p className="text-ink/80">{expense.description}</p>
+                <p className="text-xs text-ink/40">{expense.who}</p>
               </div>
-              <span className="font-semibold text-slate-700">{formatARS(expense.amount)}</span>
+              <span className="font-semibold text-ink/80">{formatARS(expense.amount)}</span>
             </li>
           ))}
         </ul>
       </section>
 
-      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-rose-100">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-rose-500">
+      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-black/5">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-success">
           Objetivos de ahorro
         </h2>
         <ul className="flex flex-col gap-4">
@@ -65,16 +65,13 @@ export default function FinanzasPage() {
             return (
               <li key={goal.id}>
                 <div className="mb-1 flex items-center justify-between text-sm">
-                  <span className="font-medium text-slate-700">{goal.title}</span>
-                  <span className="text-xs text-slate-400">
+                  <span className="font-medium text-ink/80">{goal.title}</span>
+                  <span className="text-xs text-ink/40">
                     {formatARS(goal.current)} / {formatARS(goal.target)}
                   </span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-rose-50">
-                  <div
-                    className="h-full rounded-full bg-rose-400"
-                    style={{ width: `${pct}%` }}
-                  />
+                <div className="h-2 w-full overflow-hidden rounded-full bg-success/10">
+                  <div className="h-full rounded-full bg-success" style={{ width: `${pct}%` }} />
                 </div>
               </li>
             );
