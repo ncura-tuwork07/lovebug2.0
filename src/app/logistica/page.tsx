@@ -1,10 +1,11 @@
 import { SetupBanner } from "@/components/SetupBanner";
+import { PersonChip, type PersonKey } from "@/components/ui/PersonChip";
 import { CarFront } from "lucide-react";
 
-const demoTrips = [
-  { id: 1, who: "Tomi", destination: "Club (fútbol)", time: "17:00", driver: "Naza" },
-  { id: 2, who: "Sofi", destination: "Inglés", time: "18:30", driver: "Jazmín" },
-  { id: 3, who: "Mati", destination: "Colegio (salida)", time: "16:15", driver: "Jazmín" },
+const demoTrips: { id: number; who: string; destination: string; time: string; driver: PersonKey; now?: boolean }[] = [
+  { id: 1, who: "Juana", destination: "Colegio San Martín", time: "08:00", driver: "naza" },
+  { id: 2, who: "Ariana", destination: "Instituto Kensington (inglés)", time: "13:30", driver: "jaz" },
+  { id: 3, who: "Salvador", destination: "Club Los Pinos · cancha 2", time: "17:00", driver: "jaz", now: true },
 ];
 
 export default function LogisticaPage() {
@@ -12,7 +13,7 @@ export default function LogisticaPage() {
     <div className="flex flex-col gap-6 px-4 pt-8">
       <header>
         <p className="text-sm text-success">Quién lleva a quién</p>
-        <h1 className="text-2xl font-semibold text-ink">Logística</h1>
+        <h1 className="text-h1 font-display font-bold text-ink">Logística</h1>
       </header>
 
       <SetupBanner />
@@ -21,17 +22,18 @@ export default function LogisticaPage() {
         {demoTrips.map((trip) => (
           <li
             key={trip.id}
-            className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm shadow-black/5"
+            className={`lb-card flex items-center gap-3 !p-4 ${trip.now ? "!bg-coral-soft" : ""}`}
           >
             <div className="rounded-full bg-success/10 p-2 text-success">
               <CarFront size={18} />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-ink/80">
+              <p className="font-medium text-ink">
                 {trip.who} → {trip.destination}
               </p>
-              <p className="text-xs text-ink/40">Lleva: {trip.driver}</p>
+              {trip.now && <p className="text-meta font-semibold text-coral">AHORA</p>}
             </div>
+            <PersonChip person={trip.driver} />
             <span className="text-sm font-semibold text-success">{trip.time}</span>
           </li>
         ))}

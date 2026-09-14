@@ -29,7 +29,7 @@ export function Header() {
       <span className="flex items-center gap-1.5 font-display text-lg font-bold">
         <Logo size={22} />
         <span className="text-ink">Love</span>
-        <span className="text-primary">bug</span>
+        <span className="text-coral">bug</span>
       </span>
       {email && (
         <button

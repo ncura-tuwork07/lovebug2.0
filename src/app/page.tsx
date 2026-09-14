@@ -1,5 +1,6 @@
 import { SetupBanner } from "@/components/SetupBanner";
 import { DailyInspiration } from "@/components/DailyInspiration";
+import { PersonChip, type PersonKey } from "@/components/ui/PersonChip";
 import { CalendarHeart, CarFront, CheckCircle2, Circle } from "lucide-react";
 
 const today = new Date().toLocaleDateString("es-AR", {
@@ -8,81 +9,80 @@ const today = new Date().toLocaleDateString("es-AR", {
   month: "long",
 });
 
-const demoTasks = [
-  { id: 1, title: "Pagar expensas", done: false, who: "Naza" },
-  { id: 2, title: "Comprar útiles para Sofi", done: true, who: "Jazmín" },
-  { id: 3, title: "Llamar al plomero", done: false, who: "Naza" },
+const demoTasks: { id: number; title: string; done: boolean; who: PersonKey }[] = [
+  { id: 1, title: "Pedir presupuesto del portón", done: false, who: "naza" },
+  { id: 2, title: "Comprar la pintura del living", done: false, who: "familia" },
+  { id: 3, title: "Confirmar cumple de Juana", done: true, who: "jaz" },
 ];
 
-const demoTrips = [
-  { id: 1, who: "Tomi", destination: "Club", time: "17:00", driver: "Naza" },
-  { id: 2, who: "Sofi", destination: "Inglés", time: "18:30", driver: "Jazmín" },
+const demoTrips: { id: number; who: string; destination: string; time: string; driver: PersonKey }[] = [
+  { id: 1, who: "Salvador", destination: "Club Los Pinos", time: "17:00", driver: "jaz" },
+  { id: 2, who: "Ariana", destination: "Inglés", time: "18:30", driver: "naza" },
 ];
 
-const demoEvents = [
-  { id: 1, title: "Acto del colegio de Tomi", time: "09:00" },
-];
+const demoEvents = [{ id: 1, title: "Acto del colegio de Juana", time: "09:00" }];
 
 export default function HoyPage() {
   return (
     <div className="flex flex-col gap-6 px-4 pt-8">
       <header>
-        <p className="text-sm text-secondary">Hoy es</p>
-        <h1 className="text-2xl font-semibold capitalize text-ink">{today}</h1>
+        <p className="text-sm text-amber">Hoy es</p>
+        <h1 className="text-display font-display font-bold capitalize text-ink">{today}</h1>
       </header>
 
       <SetupBanner />
 
-      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-black/5">
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-secondary">
+      <section className="lb-card">
+        <h2 className="text-h2 mb-3 flex items-center gap-2 font-display uppercase tracking-wide text-amber">
           <CheckCircle2 size={16} /> Tareas de hoy
         </h2>
         <ul className="flex flex-col gap-3">
           {demoTasks.map((task) => (
-            <li key={task.id} className="flex items-center gap-3 text-sm">
+            <li key={task.id} className="flex items-center gap-3 text-item">
               {task.done ? (
                 <CheckCircle2 size={18} className="text-success" />
               ) : (
-                <Circle size={18} className="text-surface" />
+                <Circle size={18} className="text-line" />
               )}
-              <span className={task.done ? "flex-1 text-ink/40 line-through" : "flex-1 text-ink/80"}>
+              <span className={task.done ? "flex-1 text-ink-ghost line-through" : "flex-1 text-ink"}>
                 {task.title}
               </span>
-              <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-xs text-secondary">
-                {task.who}
-              </span>
+              <PersonChip person={task.who} />
             </li>
           ))}
         </ul>
       </section>
 
-      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-black/5">
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-success">
+      <section className="lb-card">
+        <h2 className="text-h2 mb-3 flex items-center gap-2 font-display uppercase tracking-wide text-success">
           <CarFront size={16} /> Logística de hoy
         </h2>
         <ul className="flex flex-col gap-3">
           {demoTrips.map((trip) => (
-            <li key={trip.id} className="flex items-center justify-between text-sm">
+            <li key={trip.id} className="flex items-center justify-between text-item">
               <div>
-                <p className="font-medium text-ink/80">
+                <p className="font-medium text-ink">
                   {trip.who} → {trip.destination}
                 </p>
-                <p className="text-xs text-ink/40">Lleva: {trip.driver}</p>
+                <p className="text-meta text-ink-faint">Lleva:</p>
               </div>
-              <span className="text-sm font-semibold text-success">{trip.time}</span>
+              <div className="flex items-center gap-2">
+                <PersonChip person={trip.driver} />
+                <span className="text-sm font-semibold text-success">{trip.time}</span>
+              </div>
             </li>
           ))}
         </ul>
       </section>
 
-      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-black/5">
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-info">
+      <section className="lb-card">
+        <h2 className="text-h2 mb-3 flex items-center gap-2 font-display uppercase tracking-wide text-info">
           <CalendarHeart size={16} /> En el calendario
         </h2>
         <ul className="flex flex-col gap-3">
           {demoEvents.map((event) => (
-            <li key={event.id} className="flex items-center justify-between text-sm">
-              <span className="text-ink/80">{event.title}</span>
+            <li key={event.id} className="flex items-center justify-between text-item">
+              <span className="text-ink">{event.title}</span>
               <span className="text-sm font-semibold text-info">{event.time}</span>
             </li>
           ))}

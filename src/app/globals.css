@@ -1,30 +1,93 @@
 @import "tailwindcss";
 
-/* Lovebug siempre usa un tema claro y cálido, sin adaptarse al modo oscuro del sistema. */
-:root {
-  color-scheme: light;
-  --background: #fff8f1;
-  --foreground: #1e293b;
+@theme {
+  /* ── Marca ─────────────────────────── */
+  --color-coral:        #FF5A5F;   /* acción principal */
+  --color-coral-press:  #E8474C;
+  --color-coral-soft:   #FFF1EC;
+  --color-amber:        #FFB347;
+  --color-amber-soft:   #FFF6E8;
 
-  /* Paleta de marca (manual de marca Lovebug) */
-  --brand-primary: #ff5a5f; /* energía / familia */
-  --brand-secondary: #ffb347; /* alegría / optimismo */
-  --brand-ink: #1e293b; /* confianza / claridad */
-  --brand-success: #10b981; /* crecimiento / metas */
-  --brand-info: #3b82f6; /* equilibrio / calma */
-  --brand-surface: #e5e7eb; /* limpieza / orden */
+  /* ── Neutros cálidos ───────────────── */
+  --color-ink:          #1E293B;
+  --color-ink-soft:     #5B5350;
+  --color-ink-faint:    #8A7A75;
+  --color-ink-ghost:    #9A8C87;
+  --color-cream:        #FFF6F1;   /* fondo de la app */
+  --color-surface:      #FFFFFF;
+  --color-line:         #F2E4DC;
+  --color-track:        #F2E7E1;   /* fondo de barras */
+
+  /* ── Semánticos ────────────────────── */
+  --color-success:      #10B981;
+  --color-info:         #3B82F6;
+  --color-warning:      #FFB347;
+  --color-danger:       #EF4444;
+
+  /* ── Personas ──────────────────────── */
+  --color-naza:         #3B82F6;
+  --color-jaz:          #EC4899;
+  --color-juana:        #FFB347;
+  --color-salvador:     #10B981;
+  --color-ariana:       #8B5CF6;
+  --color-familia:      #FF5A5F;
+
+  /* ── Categorías de evento ──────────── */
+  --color-cat-colegio:  #3B82F6;
+  --color-cat-salud:    #FF5A5F;
+  --color-cat-activ:    #10B981;
+  --color-cat-social:   #FFB347;
+  --color-cat-casa:     #8B5CF6;
+  --color-cat-plata:    #1E293B;
+
+  /* ── Tipografía ────────────────────── */
+  --font-display: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --font-sans:    var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-accent:  var(--font-caveat), cursive;
+
+  --text-display:  1.75rem;  --text-display--line-height: 1.15;
+  --text-display--letter-spacing: -0.022em;
+  --text-h1:       1.5625rem; --text-h1--line-height: 1.2;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h2:       0.9375rem; --text-h2--line-height: 1.3;
+  --text-item:     0.9062rem; --text-item--line-height: 1.35;
+  --text-body:     0.9062rem; --text-body--line-height: 1.55;
+  --text-meta:     0.7812rem; --text-meta--line-height: 1.4;
+  --text-label:    0.7188rem; --text-label--letter-spacing: 0.1em;
+
+  /* ── Radios ────────────────────────── */
+  --radius-sm:    12px;
+  --radius-md:    16px;   /* inputs, botones */
+  --radius-card:  20px;   /* tarjetas */
+  --radius-sheet: 28px;   /* bottom sheets */
+
+  /* ── Sombras cálidas ───────────────── */
+  --shadow-soft: 0 1px 3px rgb(190 120 100 / 0.10);
+  --shadow-card: 0 4px 16px rgb(190 120 100 / 0.14);
+  --shadow-pop:  0 12px 32px rgb(190 120 100 / 0.20);
+  --shadow-fab:  0 8px 22px rgb(255 90 95 / 0.38);
+  --shadow-nav:  0 -4px 20px rgb(190 120 100 / 0.10);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-primary: var(--brand-primary);
-  --color-secondary: var(--brand-secondary);
-  --color-ink: var(--brand-ink);
-  --color-success: var(--brand-success);
-  --color-info: var(--brand-info);
-  --color-surface: var(--brand-surface);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-baloo);
+@layer base {
+  html { color-scheme: light; }
+  body {
+    background: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  .lb-card   { @apply bg-surface rounded-card p-4 shadow-soft; }
+  .lb-btn    { @apply font-display font-semibold text-[15px] rounded-md px-6 py-3
+                       bg-coral text-white shadow-[0_4px_14px_rgb(255_90_95/0.28)]
+                       active:bg-coral-press; }
+  .lb-input  { @apply w-full bg-[#FFF9F6] border-[1.5px] border-[#EFDFD7] rounded-md
+                       px-4 py-3 text-[15px] placeholder:text-ink-ghost
+                       focus:border-coral focus:ring-4 focus:ring-coral/12 outline-none; }
+  .lb-chip   { @apply text-xs font-semibold rounded-full px-2.5 py-1; }
+  .lb-nav    { @apply fixed inset-x-0 bottom-0 bg-surface border-t border-line shadow-nav
+                       pt-2 pb-[calc(16px+env(safe-area-inset-bottom))]; }
 }

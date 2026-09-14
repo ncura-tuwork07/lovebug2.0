@@ -1,14 +1,14 @@
 import { SetupBanner } from "@/components/SetupBanner";
 
 const demoExpenses = [
-  { id: 1, description: "Supermercado", amount: 45000, who: "Jazmín", fixed: false },
-  { id: 2, description: "Alquiler", amount: 380000, who: "Naza", fixed: true },
-  { id: 3, description: "Fideos y snacks", amount: 6200, who: "Naza", fixed: false },
+  { id: 1, description: "Supermercado Coto", meta: "Hoy 11:20 · cargó Jaz", amount: 38400 },
+  { id: 2, description: "Nafta", meta: "Ayer 18:05 · cargó Naza", amount: 25000 },
+  { id: 3, description: "Cuota colegio", meta: "5 de mayo · fijo", amount: 142000 },
 ];
 
 const demoGoals = [
-  { id: 1, title: "Auto", current: 850000, target: 4000000 },
-  { id: 2, title: "Casa (pie)", current: 1200000, target: 15000000 },
+  { id: 1, title: "Auto", current: 1260000, target: 3000000, color: "var(--color-coral)" },
+  { id: 2, title: "Casa (pie)", current: 540000, target: 3000000, color: "var(--color-success)" },
 ];
 
 const formatARS = (value: number) =>
@@ -16,47 +16,43 @@ const formatARS = (value: number) =>
 
 export default function FinanzasPage() {
   const monthTotal = demoExpenses.reduce((sum, e) => sum + e.amount, 0);
-  const fixedTotal = demoExpenses.filter((e) => e.fixed).reduce((sum, e) => sum + e.amount, 0);
 
   return (
     <div className="flex flex-col gap-6 px-4 pt-8">
       <header>
-        <p className="text-sm text-primary">Nuestra plata</p>
-        <h1 className="text-2xl font-semibold text-ink">Finanzas</h1>
+        <p className="text-sm" style={{ color: "var(--color-ariana)" }}>
+          Nuestra plata
+        </p>
+        <h1 className="text-h1 font-display font-bold text-ink">Finanzas</h1>
       </header>
 
       <SetupBanner />
 
-      <section className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-white p-4 shadow-sm shadow-black/5">
-          <p className="text-xs text-ink/40">Gastado este mes</p>
-          <p className="text-lg font-semibold text-ink">{formatARS(monthTotal)}</p>
-        </div>
-        <div className="rounded-2xl bg-white p-4 shadow-sm shadow-black/5">
-          <p className="text-xs text-ink/40">Gastos fijos</p>
-          <p className="text-lg font-semibold text-ink">{formatARS(fixedTotal)}</p>
-        </div>
+      <section className="lb-card">
+        <p className="text-label font-display uppercase text-ink-ghost">Saldo en cuenta</p>
+        <p className="text-display font-display font-bold text-ink">{formatARS(482350)}</p>
+        <p className="mt-1 text-sm font-semibold text-success">↑ 12% vs. mes anterior</p>
       </section>
 
-      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-black/5">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">
-          Últimos gastos
+      <section className="lb-card">
+        <h2 className="text-h2 mb-3 font-display uppercase tracking-wide" style={{ color: "var(--color-ariana)" }}>
+          Últimos gastos ({formatARS(monthTotal)} este mes)
         </h2>
         <ul className="flex flex-col gap-3">
           {demoExpenses.map((expense) => (
-            <li key={expense.id} className="flex items-center justify-between text-sm">
+            <li key={expense.id} className="flex items-center justify-between text-item">
               <div>
-                <p className="text-ink/80">{expense.description}</p>
-                <p className="text-xs text-ink/40">{expense.who}</p>
+                <p className="text-ink">{expense.description}</p>
+                <p className="text-meta text-ink-faint">{expense.meta}</p>
               </div>
-              <span className="font-semibold text-ink/80">{formatARS(expense.amount)}</span>
+              <span className="font-semibold text-ink">{formatARS(expense.amount)}</span>
             </li>
           ))}
         </ul>
       </section>
 
-      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-black/5">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-success">
+      <section className="lb-card">
+        <h2 className="text-h2 mb-3 font-display uppercase tracking-wide text-success">
           Objetivos de ahorro
         </h2>
         <ul className="flex flex-col gap-4">
@@ -65,13 +61,16 @@ export default function FinanzasPage() {
             return (
               <li key={goal.id}>
                 <div className="mb-1 flex items-center justify-between text-sm">
-                  <span className="font-medium text-ink/80">{goal.title}</span>
-                  <span className="text-xs text-ink/40">
+                  <span className="font-medium text-ink">{goal.title}</span>
+                  <span className="text-meta text-ink-faint">
                     {formatARS(goal.current)} / {formatARS(goal.target)}
                   </span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-success/10">
-                  <div className="h-full rounded-full bg-success" style={{ width: `${pct}%` }} />
+                <div className="h-2 w-full overflow-hidden rounded-full bg-track">
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: `${pct}%`, backgroundColor: goal.color }}
+                  />
                 </div>
               </li>
             );

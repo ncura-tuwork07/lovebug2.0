@@ -6,34 +6,34 @@ export function DailyInspiration() {
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="rounded-3xl bg-white p-5 shadow-sm shadow-black/5">
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-primary">
+      <div className="lb-card">
+        <h2 className="text-h2 mb-3 flex items-center gap-2 font-display uppercase tracking-wide text-coral">
           <BookHeart size={16} /> Cita bíblica del día
         </h2>
-        <p className="text-sm italic text-ink/80">&ldquo;{verse.verse}&rdquo;</p>
-        <p className="mt-1 text-xs font-semibold text-primary">{verse.reference}</p>
-        <p className="mt-3 text-sm text-ink/50">{verse.reflection}</p>
+        <p className="font-accent text-2xl leading-tight text-ink">&ldquo;{verse.verse}&rdquo;</p>
+        <p className="mt-1 text-meta font-semibold text-coral">{verse.reference}</p>
+        <p className="mt-3 text-body text-ink-soft">{verse.reflection}</p>
       </div>
 
-      <div className="rounded-3xl bg-white p-5 shadow-sm shadow-black/5">
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-primary">
+      <div className="lb-card">
+        <h2 className="text-h2 mb-3 flex items-center gap-2 font-display uppercase tracking-wide text-coral">
           <HandHeart size={16} /> {prayer.title}
         </h2>
-        <p className="text-sm text-ink/60">{prayer.text}</p>
+        <p className="text-body text-ink-soft">{prayer.text}</p>
       </div>
 
-      <div className="rounded-3xl bg-white p-5 shadow-sm shadow-black/5">
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-secondary">
+      <div className="lb-card">
+        <h2 className="text-h2 mb-3 flex items-center gap-2 font-display uppercase tracking-wide text-amber">
           <Sparkle size={16} /> Horóscopo del día
         </h2>
-        <div className="flex flex-col gap-3 text-sm">
+        <div className="flex flex-col gap-3 text-item">
           <div>
-            <p className="font-semibold text-ink/80">Naza · Aries</p>
-            <p className="text-ink/50">{horoscope.aries}</p>
+            <p className="font-semibold text-ink">Naza · Aries</p>
+            <p className="text-ink-soft">{horoscope.aries}</p>
           </div>
           <div>
-            <p className="font-semibold text-ink/80">Jazmín · Acuario</p>
-            <p className="text-ink/50">{horoscope.acuario}</p>
+            <p className="font-semibold text-ink">Jazmín · Acuario</p>
+            <p className="text-ink-soft">{horoscope.acuario}</p>
           </div>
         </div>
       </div>

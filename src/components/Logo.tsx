@@ -1,4 +1,15 @@
-export function Logo({ size = 32, className }: { size?: number; className?: string }) {
+export function Logo({
+  size = 32,
+  variant = "light",
+  className,
+}: {
+  size?: number;
+  variant?: "light" | "dark";
+  className?: string;
+}) {
+  const ink = variant === "dark" ? "#F8FAFC" : "#1E293B";
+  const bodyLine = variant === "dark" ? "#0F172A" : "#1E293B";
+
   return (
     <svg
       width={size}
@@ -7,47 +18,25 @@ export function Logo({ size = 32, className }: { size?: number; className?: stri
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      aria-hidden="true"
+      aria-label="Lovebug"
     >
-      <defs>
-        <linearGradient id="lovebug-gradient" x1="8" y1="10" x2="56" y2="54" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#FFB347" />
-          <stop offset="1" stopColor="#FF5A5F" />
-        </linearGradient>
-      </defs>
-
-      {/* Antenas */}
       <path
-        d="M24 14 L18 6 M40 14 L46 6"
-        stroke="var(--brand-ink)"
-        strokeWidth="3"
-        strokeLinecap="round"
+        d="M32 58C20 50 6 41 6 28 6 18 13 12 21 12c5 0 9 2 11 6 2-4 6-6 11-6 8 0 15 6 15 16 0 13-14 22-26 30z"
+        fill="#FF5A5F"
       />
-      <circle cx="18" cy="6" r="2.4" fill="var(--brand-ink)" />
-      <circle cx="46" cy="6" r="2.4" fill="var(--brand-ink)" />
-
-      {/* Cuerpo con forma de corazón */}
       <path
-        d="M32 56
-           C 14 44, 4 33, 4 21
-           C 4 11, 12 6, 20 10
-           C 25 12.5, 29 17, 32 22
-           C 35 17, 39 12.5, 44 10
-           C 52 6, 60 11, 60 21
-           C 60 33, 50 44, 32 56 Z"
-        fill="url(#lovebug-gradient)"
+        d="M32 18c2-4 6-6 11-6 8 0 15 6 15 16 0 13-14 22-26 30z"
+        fill="#F0454B"
       />
-
-      {/* Línea central de las alas */}
-      <path d="M32 22 L32 52" stroke="var(--brand-ink)" strokeWidth="2" strokeLinecap="round" opacity="0.35" />
-
-      {/* Manchas */}
-      <circle cx="18" cy="26" r="3.4" fill="var(--brand-ink)" />
-      <circle cx="16" cy="37" r="3" fill="var(--brand-ink)" />
-      <circle cx="24" cy="44" r="2.6" fill="var(--brand-ink)" />
-      <circle cx="46" cy="26" r="3.4" fill="var(--brand-ink)" />
-      <circle cx="48" cy="37" r="3" fill="var(--brand-ink)" />
-      <circle cx="40" cy="44" r="2.6" fill="var(--brand-ink)" />
+      <rect x="30.4" y="16" width="3.2" height="40" rx="1.6" fill={bodyLine} />
+      <circle cx="32" cy="15" r="9" fill={bodyLine} />
+      <path d="M25 6l3 5M39 6l-3 5" stroke={ink} strokeWidth="2.6" strokeLinecap="round" />
+      <circle cx="25" cy="4.5" r="2.6" fill={ink} />
+      <circle cx="39" cy="4.5" r="2.6" fill={ink} />
+      <circle cx="21" cy="28" r="4" fill={bodyLine} />
+      <circle cx="43" cy="28" r="4" fill={bodyLine} />
+      <circle cx="26" cy="40" r="3.2" fill={bodyLine} />
+      <circle cx="38" cy="40" r="3.2" fill={bodyLine} />
     </svg>
   );
 }
