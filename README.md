@@ -28,7 +28,26 @@ npm run dev
 ```
 
 Sin `.env.local` configurado, la app funciona igual en **modo demo** con
-datos de ejemplo, para poder ver y ajustar el diseño.
+datos de ejemplo, para poder ver y ajustar el diseño (sin login).
+
+### Login (solo Naza y Jazmín)
+
+La app usa Supabase Auth con email + contraseña. No hay registro público:
+las únicas dos cuentas que pueden entrar se crean una vez con un script.
+
+1. En `.env.local`, completá `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project
+   Settings → API → `service_role`, **nunca** la subas a NEXT_PUBLIC ni al repo)
+   y `SEED_PASSWORD` con la contraseña que van a usar los dos.
+2. Corré:
+
+   ```bash
+   npm run seed:users
+   ```
+
+   Esto crea `nazacura95@gmail.com` y `jazmin.sorrentino2020@gmail.com` en
+   Supabase Auth con esa contraseña (si ya existen, se la actualiza).
+3. Borrá `SEED_PASSWORD` de `.env.local` una vez creadas las cuentas — ya no
+   hace falta guardarla.
 
 ## Stack
 

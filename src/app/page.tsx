@@ -1,4 +1,5 @@
 import { SetupBanner } from "@/components/SetupBanner";
+import { DailyInspiration } from "@/components/DailyInspiration";
 import { CalendarHeart, CarFront, CheckCircle2, Circle } from "lucide-react";
 
 const today = new Date().toLocaleDateString("es-AR", {
@@ -89,6 +90,8 @@ export default function HoyPage() {
           ))}
         </ul>
       </section>
+
+      <DailyInspiration />
     </div>
   );
 }
