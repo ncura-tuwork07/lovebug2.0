@@ -1,16 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/is-configured";
 import { Logo } from "@/components/Logo";
-
-const displayNames: Record<string, string> = {
-  "nazacura95@gmail.com": "Nazareno",
-  "jazmin.sorrentino2020@gmail.com": "Jazmín",
-};
 
 export function Header() {
   const pathname = usePathname();
@@ -26,23 +22,36 @@ export function Header() {
 
   return (
     <div className="flex items-center justify-between px-4 pt-4">
-      <span className="flex items-center gap-1.5 font-display text-lg font-bold">
+      <Link href="/" className="flex items-center gap-1.5 font-display text-lg font-bold">
         <Logo size={22} />
-        <span className="text-ink">Love</span>
-        <span className="text-coral">bug</span>
-      </span>
+        <span>
+          <span className="text-ink">Love</span>
+          <span className="text-coral">bug</span>
+        </span>
+      </Link>
       {email && (
-        <button
-          type="button"
-          onClick={async () => {
-            await createClient().auth.signOut();
-            window.location.href = "/login";
-          }}
-          className="flex items-center gap-1 text-xs text-ink/40"
-        >
-          {displayNames[email] ?? email}
-          <LogOut size={14} />
-        </button>
+        <div className="flex items-center gap-1">
+          <Link
+            href="/familia"
+            aria-label="Familia"
+            className={`flex h-11 w-11 items-center justify-center rounded-full ${
+              pathname === "/familia" ? "text-coral" : "text-ink-ghost"
+            }`}
+          >
+            <Users size={18} />
+          </Link>
+          <button
+            type="button"
+            aria-label="Cerrar sesión"
+            onClick={async () => {
+              await createClient().auth.signOut();
+              window.location.href = "/login";
+            }}
+            className="flex h-11 w-11 items-center justify-center rounded-full text-ink-ghost"
+          >
+            <LogOut size={18} />
+          </button>
+        </div>
       )}
     </div>
   );

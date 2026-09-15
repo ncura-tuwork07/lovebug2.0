@@ -153,7 +153,8 @@ function dayOfYear(date: Date) {
   return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
-export function getDailyContent(date: Date = new Date()) {
+// Banco curado de respaldo: se usa cuando las fuentes online no responden.
+export function getFallbackContent(date: Date = new Date()) {
   const day = dayOfYear(date);
 
   return {
