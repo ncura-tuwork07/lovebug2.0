@@ -20,9 +20,17 @@
 
   /* ── Semánticos ────────────────────── */
   --color-success:      #10B981;
+  --color-success-soft: #E9FAF3;
   --color-info:         #3B82F6;
+  --color-info-soft:    #EAF2FE;
   --color-warning:      #FFB347;
   --color-danger:       #EF4444;
+
+  /* ── Inputs y logo ─────────────────── */
+  --color-field:        #FFF9F6;
+  --color-field-line:   #EFDFD7;
+  --color-logo-body:    #1E293B;
+  --color-logo-antenna: #1E293B;
 
   /* ── Personas ──────────────────────── */
   --color-naza:         #3B82F6;
@@ -69,6 +77,31 @@
   --shadow-nav:  0 -4px 20px rgb(190 120 100 / 0.10);
 }
 
+/* Modo nocturno: misma paleta de acentos sobre fondo tinta. Se activa con data-theme="dark" en <html>. */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-ink:          #F4EEE9;
+  --color-ink-soft:     #CFC6BF;
+  --color-ink-faint:    #A0958E;
+  --color-ink-ghost:    #7E746D;
+  --color-cream:        #131A29;
+  --color-surface:      #1E293B;
+  --color-line:         #2E3A50;
+  --color-track:        #2E3A50;
+  --color-coral-soft:   #3B2427;
+  --color-amber-soft:   #3A2F1C;
+  --color-success-soft: #173328;
+  --color-info-soft:    #1B2A44;
+  --color-field:        #172033;
+  --color-field-line:   #2E3A50;
+  --color-logo-body:    #0F172A;
+  --color-logo-antenna: #F8FAFC;
+  --shadow-soft: 0 1px 3px rgb(0 0 0 / 0.35);
+  --shadow-card: 0 4px 16px rgb(0 0 0 / 0.4);
+  --shadow-pop:  0 12px 32px rgb(0 0 0 / 0.55);
+  --shadow-nav:  0 -4px 20px rgb(0 0 0 / 0.4);
+}
+
 @layer base {
   html { color-scheme: light; }
   body {
@@ -76,6 +109,7 @@
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 }
 
@@ -84,8 +118,8 @@
   .lb-btn    { @apply font-display font-semibold text-[15px] rounded-md px-6 py-3
                        bg-coral text-white shadow-[0_4px_14px_rgb(255_90_95/0.28)]
                        active:bg-coral-press; }
-  .lb-input  { @apply w-full bg-[#FFF9F6] border-[1.5px] border-[#EFDFD7] rounded-md
-                       px-4 py-3 text-[15px] placeholder:text-ink-ghost
+  .lb-input  { @apply w-full bg-field border-[1.5px] border-field-line rounded-md
+                       px-4 py-3 text-[15px] text-ink placeholder:text-ink-ghost
                        focus:border-coral focus:ring-4 focus:ring-coral/12 outline-none; }
   .lb-chip   { @apply text-xs font-semibold rounded-full px-2.5 py-1; }
   .lb-nav    { @apply fixed inset-x-0 bottom-0 bg-surface border-t border-line shadow-nav

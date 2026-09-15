@@ -2,7 +2,8 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import { ArrowDownCircle, ArrowUpCircle, PiggyBank, Plus } from "lucide-react";
-import type { Expense, ExpenseCategory, Income, IncomeSource, Member, SavingsGoal } from "@/lib/types";
+import type { Budget, Expense, ExpenseCategory, Income, IncomeSource, Member, SavingsGoal } from "@/lib/types";
+import { BudgetsPanel } from "./BudgetsPanel";
 import {
   addToGoal,
   deleteExpense,
@@ -19,34 +20,15 @@ import { MemberChip, memberById } from "@/components/ui/MemberChip";
 import { fd, useSheet } from "@/components/ui/useSheet";
 import { formatARS, relativeDayLabel, todayAR } from "@/lib/format";
 
-export const EXPENSE_CATEGORIES: Record<ExpenseCategory, string> = {
-  super: "Supermercado",
-  casa: "Casa",
-  chicos: "Chicos",
-  auto: "Auto / nafta",
-  salud: "Salud",
-  ocio: "Salidas / ocio",
-  ropa: "Ropa",
-  servicios: "Servicios",
-  alquiler: "Alquiler / expensas",
-  educacion: "Colegio / educación",
-  otro: "Otro",
-};
+import { EXPENSE_CATEGORIES, INCOME_SOURCES } from "@/lib/labels";
 
-export const INCOME_SOURCES: Record<IncomeSource, string> = {
-  sueldo: "Sueldo",
-  freelance: "Freelance / tercerizado",
-  proyecto: "Proyecto",
-  anses: "ANSES / asignación",
-  otro: "Otro",
-};
-
-type Tab = "gastos" | "ingresos" | "ahorro";
+type Tab = "gastos" | "ingresos" | "ahorro" | "topes";
 
 export function FinanceView({
   incomes,
   expenses,
   goals,
+  budgets,
   members,
   currentMemberId,
   monthLabel,
@@ -54,6 +36,7 @@ export function FinanceView({
   incomes: Income[];
   expenses: Expense[];
   goals: SavingsGoal[];
+  budgets: Budget[];
   members: Member[];
   currentMemberId: string | null;
   monthLabel: string;
@@ -165,14 +148,14 @@ export function FinanceView({
           {formatARS(balance)}
         </p>
         <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-          <div className="rounded-md bg-[#E9FAF3] p-3">
-            <p className="flex items-center gap-1 text-meta font-semibold text-[#0B7A5E]">
+          <div className="rounded-md bg-success-soft p-3">
+            <p className="flex items-center gap-1 text-meta font-semibold text-success">
               <ArrowUpCircle size={13} /> Ingresos
             </p>
             <p className="font-display text-lg font-bold text-ink">{formatARS(totalIn)}</p>
           </div>
           <div className="rounded-md bg-coral-soft p-3">
-            <p className="flex items-center gap-1 text-meta font-semibold text-[#B23B3F]">
+            <p className="flex items-center gap-1 text-meta font-semibold text-coral">
               <ArrowDownCircle size={13} /> Gastos
             </p>
             <p className="font-display text-lg font-bold text-ink">{formatARS(totalOut)}</p>
@@ -195,7 +178,7 @@ export function FinanceView({
 
       {/* Tabs */}
       <div className="flex rounded-md bg-line/60 p-1">
-        {(["gastos", "ingresos", "ahorro"] as Tab[]).map((t) => (
+        {(["gastos", "ingresos", "ahorro", "topes"] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
@@ -302,7 +285,10 @@ export function FinanceView({
         </ul>
       )}
 
-      <Fab onClick={openForTab} label="Agregar" />
+      {/* Topes por categoría */}
+      {tab === "topes" && <BudgetsPanel budgets={budgets} expenses={expenses} />}
+
+      {tab !== "topes" && <Fab onClick={openForTab} label="Agregar" />}
 
       {/* Sheet: gasto */}
       <BottomSheet
@@ -400,7 +386,7 @@ export function FinanceView({
         title={goalSheet.editing ? "Objetivo de ahorro" : "Nuevo objetivo"}
       >
         {goalSheet.editing && (
-          <form onSubmit={submitContribution} className="mb-5 flex items-end gap-3 rounded-card bg-[#E9FAF3] p-3">
+          <form onSubmit={submitContribution} className="mb-5 flex items-end gap-3 rounded-card bg-success-soft p-3">
             <Field label="Sumar un aporte ($)">
               <Input name="contribution" type="number" inputMode="decimal" step="any" min="1" required placeholder="0" />
             </Field>

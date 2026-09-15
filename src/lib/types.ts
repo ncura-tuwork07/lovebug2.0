@@ -7,6 +7,28 @@ export type Member = {
   notes: string | null;
   user_id: string | null;
   sort_order: number;
+  nickname: string | null;
+  photo_url: string | null;
+  dni: string | null;
+  phone: string | null;
+  blood_type: string | null;
+  allergies: string | null;
+  school: string | null;
+  doctor: string | null;
+  share_location: boolean;
+};
+
+export type DocumentKind = "dni" | "vacunas" | "ficha_medica" | "colegio" | "seguro" | "otro";
+
+export type FamilyDocument = {
+  id: string;
+  member_id: string | null;
+  title: string;
+  kind: DocumentKind;
+  file_path: string;
+  mime_type: string | null;
+  size_bytes: number | null;
+  created_at: string;
 };
 
 export type Task = {
@@ -16,6 +38,86 @@ export type Task = {
   due_date: string;
   done: boolean;
   notes: string | null;
+  points: number;
+};
+
+export type ShoppingCategory = "almacen" | "frescos" | "limpieza" | "chicos" | "farmacia" | "otro";
+
+export type ShoppingItem = {
+  id: string;
+  name: string;
+  quantity: string | null;
+  category: ShoppingCategory;
+  checked: boolean;
+  checked_at: string | null;
+  added_by: string | null;
+  created_at: string;
+};
+
+export type MealPlan = {
+  id: string;
+  day: string;
+  slot: "almuerzo" | "cena";
+  title: string;
+  notes: string | null;
+};
+
+export type ReminderCategory = "seguro" | "servicio" | "impuesto" | "colegio" | "salud" | "auto" | "casa" | "otro";
+
+export type Reminder = {
+  id: string;
+  title: string;
+  due_date: string;
+  category: ReminderCategory;
+  amount: number | null;
+  member_id: string | null;
+  notify_days_before: number;
+  repeat: "none" | "monthly" | "yearly";
+  done: boolean;
+  notes: string | null;
+};
+
+export type ImportantDate = {
+  id: string;
+  title: string;
+  month: number;
+  day: number;
+  year: number | null;
+  kind: "cumple" | "aniversario" | "otro";
+  member_id: string | null;
+  remind_days_before: number;
+  gift_ideas: string | null;
+};
+
+export type PointsEntry = {
+  id: string;
+  member_id: string;
+  points: number;
+  reason: string | null;
+  ref_id: string | null;
+  created_at: string;
+};
+
+export type Reward = {
+  id: string;
+  title: string;
+  cost: number;
+  emoji: string | null;
+  active: boolean;
+};
+
+export type Budget = {
+  id: string;
+  category: string;
+  monthly_limit: number;
+};
+
+export type MemberLocation = {
+  member_id: string;
+  lat: number;
+  lng: number;
+  accuracy: number | null;
+  updated_at: string;
 };
 
 export type Transport = "auto" | "colectivo" | "caminando" | "bici" | "moto" | "otro";

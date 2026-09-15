@@ -7,6 +7,7 @@ import { LogOut, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/is-configured";
 import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Header() {
   const pathname = usePathname();
@@ -31,6 +32,7 @@ export function Header() {
       </Link>
       {email && (
         <div className="flex items-center gap-1">
+          <ThemeToggle />
           <Link
             href="/familia"
             aria-label="Familia"

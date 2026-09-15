@@ -32,7 +32,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-ink px-6">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-[#1E293B] px-6">
       <div className="text-center">
         <Logo size={56} variant="dark" className="mx-auto" />
         <h1 className="mt-2 font-display text-2xl font-bold">

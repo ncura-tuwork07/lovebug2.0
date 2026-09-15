@@ -6,7 +6,7 @@ import { CheckCircle2, Circle, Plus } from "lucide-react";
 import type { Member, Task } from "@/lib/types";
 import { deleteTask, saveTask, toggleTask } from "@/app/actions/tasks";
 import { BottomSheet } from "@/components/ui/BottomSheet";
-import { Field, Input, MemberSelect, SubmitRow, Textarea } from "@/components/ui/Field";
+import { Field, Input, MemberSelect, Select, SubmitRow, Textarea } from "@/components/ui/Field";
 import { MemberChip, memberById } from "@/components/ui/MemberChip";
 import { fd, useSheet } from "@/components/ui/useSheet";
 
@@ -45,6 +45,7 @@ export function TasksList({
         assigned_to: f.opt("assigned_to"),
         due_date: f.str("due_date"),
         notes: f.opt("notes"),
+        points: f.num("points"),
       })
     );
   }
@@ -95,6 +96,7 @@ export function TasksList({
                 className={`min-h-11 flex-1 text-left ${task.done ? "text-ink-ghost line-through" : "text-ink"}`}
               >
                 {task.title}
+                {task.points > 0 && <span className="ml-1.5 text-meta font-semibold text-amber">★ {task.points}</span>}
               </button>
               <MemberChip member={member} />
             </li>
@@ -119,6 +121,15 @@ export function TasksList({
               <Input name="due_date" type="date" required defaultValue={sheet.editing?.due_date ?? date} />
             </Field>
           </div>
+          <Field label="Puntos (para los chicos)" hint="Se acreditan al marcarla como hecha.">
+            <Select name="points" defaultValue={String(sheet.editing?.points ?? 0)}>
+              {[0, 5, 10, 20, 50].map((p) => (
+                <option key={p} value={p}>
+                  {p === 0 ? "Sin puntos" : `★ ${p} puntos`}
+                </option>
+              ))}
+            </Select>
+          </Field>
           <Field label="Notas (opcional)">
             <Textarea name="notes" defaultValue={sheet.editing?.notes ?? ""} />
           </Field>

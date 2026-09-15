@@ -1,9 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Outfit, Plus_Jakarta_Sans, Caveat } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "@/components/BottomNav";
 import { Header } from "@/components/Header";
 import { RefreshOnFocus } from "@/components/RefreshOnFocus";
+import { SwRegister } from "@/components/SwRegister";
+import { LocationSharer } from "@/components/LocationSharer";
+import { getCurrentMember, getMembers } from "@/lib/data";
+import { isSupabaseConfigured } from "@/lib/supabase/is-configured";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -43,21 +47,30 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   themeColor: "#FFF6F1",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+// Aplica el tema guardado antes del primer render, para que no parpadee.
+const themeScript = `try{if(localStorage.getItem("lovebug-theme")==="dark"){document.documentElement.dataset.theme="dark";var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#131A29");}}catch(e){}`;
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  let me: { id: string; share_location: boolean } | null = null;
+  if (isSupabaseConfigured()) {
+    const members = await getMembers();
+    me = await getCurrentMember(members);
+  }
+
   return (
-    <html
-      lang="es"
-      className={`${outfit.variable} ${jakarta.variable} ${caveat.variable} h-full antialiased`}
-    >
+    <html lang="es" suppressHydrationWarning className={`${outfit.variable} ${jakarta.variable} ${caveat.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-cream text-ink">
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <RefreshOnFocus />
+        <SwRegister />
+        <LocationSharer memberId={me?.id ?? null} enabled={me?.share_location ?? false} />
         <div className="mx-auto w-full max-w-md flex-1">
           <Header />
           <main className="pb-28">{children}</main>
