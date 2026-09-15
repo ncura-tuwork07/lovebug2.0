@@ -75,6 +75,10 @@ export function daysUntilLabel(n: number): string {
   if (n === 0) return "¡Es hoy!";
   if (n === 1) return "Mañana";
   if (n < 7) return `En ${n} días`;
-  if (n < 30) return `En ${Math.round(n / 7)} semana${n < 14 ? "" : "s"}`;
-  return `En ${Math.round(n / 30)} mes${n < 60 ? "" : "es"}`;
+  if (n < 30) {
+    const w = Math.max(1, Math.round(n / 7));
+    return `En ${w} semana${w === 1 ? "" : "s"}`;
+  }
+  const m = Math.max(1, Math.round(n / 30));
+  return `En ${m} mes${m === 1 ? "" : "es"}`;
 }

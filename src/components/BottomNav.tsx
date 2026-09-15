@@ -23,7 +23,7 @@ export function BottomNav() {
         {items.map(({ href, label, icon: Icon, color }) => {
           const active =
             href === "/mas"
-              ? ["/mas", "/compras", "/menu", "/mapa", "/proyectos", "/familia", "/vencimientos", "/puntos"].some((p) =>
+              ? ["/mas", "/compras", "/menu", "/mapa", "/proyectos", "/familia", "/vencimientos", "/puntos", "/eventos", "/recetas", "/despensa"].some((p) =>
                   pathname.startsWith(p)
                 )
               : pathname === href;

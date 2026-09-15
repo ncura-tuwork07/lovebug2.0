@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Circle, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, Circle, PackageCheck, PartyPopper, Plus, Trash2 } from "lucide-react";
 import type { Member, ShoppingCategory, ShoppingItem } from "@/lib/types";
 import {
   addShoppingItems,
@@ -16,24 +16,20 @@ import { Field, Input, Select, SubmitRow } from "@/components/ui/Field";
 import { MemberDot, memberById } from "@/components/ui/MemberChip";
 import { fd, useSheet } from "@/components/ui/useSheet";
 import { useRealtimeRefresh } from "@/components/useRealtime";
+import { moveCheckedToPantry } from "@/app/actions/pantry";
 
-export const SHOPPING_CATEGORIES: Record<ShoppingCategory, string> = {
-  almacen: "Almacén",
-  frescos: "Frescos",
-  limpieza: "Limpieza",
-  chicos: "Chicos",
-  farmacia: "Farmacia",
-  otro: "Otro",
-};
+import { SHOPPING_CATEGORIES } from "@/lib/labels";
 
 export function ShoppingList({
   items,
   members,
   currentMemberId,
+  eventNames = {},
 }: {
   items: ShoppingItem[];
   members: Member[];
   currentMemberId: string | null;
+  eventNames?: Record<string, string>;
 }) {
   useRealtimeRefresh("shopping_items");
   const router = useRouter();
@@ -109,6 +105,9 @@ export function ShoppingList({
       >
         <span>{item.name}</span>
         {item.quantity && <span className="text-meta text-ink-faint">× {item.quantity}</span>}
+        {item.event_id && eventNames[item.event_id] && (
+          <span className="inline-flex items-center gap-1 text-meta text-coral"><PartyPopper size={11} /> {eventNames[item.event_id]}</span>
+        )}
         <MemberDot member={memberById(members, item.added_by)} size={8} />
       </button>
     </li>
@@ -148,16 +147,28 @@ export function ShoppingList({
         <section className="lb-card !py-3 opacity-80">
           <div className="mb-1 flex items-center justify-between">
             <h2 className="text-label font-display uppercase tracking-wider text-ink-ghost">En el changuito · {done.length}</h2>
-            <button
-              type="button"
-              onClick={async () => {
-                await clearCheckedShopping();
-                router.refresh();
-              }}
-              className="flex min-h-9 items-center gap-1 text-xs font-semibold text-ink-faint"
-            >
-              <Trash2 size={13} /> Vaciar
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={async () => {
+                  await moveCheckedToPantry();
+                  router.refresh();
+                }}
+                className="flex min-h-9 items-center gap-1 text-xs font-semibold text-success"
+              >
+                <PackageCheck size={13} /> Guardar en despensa
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await clearCheckedShopping();
+                  router.refresh();
+                }}
+                className="flex min-h-9 items-center gap-1 text-xs font-semibold text-ink-faint"
+              >
+                <Trash2 size={13} /> Vaciar
+              </button>
+            </div>
           </div>
           <ul>{done.map(renderItem)}</ul>
         </section>

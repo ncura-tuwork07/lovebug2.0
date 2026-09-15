@@ -39,6 +39,7 @@ export type Task = {
   done: boolean;
   notes: string | null;
   points: number;
+  event_id: string | null;
 };
 
 export type ShoppingCategory = "almacen" | "frescos" | "limpieza" | "chicos" | "farmacia" | "otro";
@@ -52,6 +53,7 @@ export type ShoppingItem = {
   checked_at: string | null;
   added_by: string | null;
   created_at: string;
+  event_id: string | null;
 };
 
 export type MealPlan = {
@@ -60,6 +62,8 @@ export type MealPlan = {
   slot: "almuerzo" | "cena";
   title: string;
   notes: string | null;
+  recipe_id: string | null;
+  portions: number | null;
 };
 
 export type ReminderCategory = "seguro" | "servicio" | "impuesto" | "colegio" | "salud" | "auto" | "casa" | "otro";
@@ -180,6 +184,7 @@ export type Expense = {
   paid_by: string | null;
   spent_at: string;
   is_fixed: boolean;
+  event_id: string | null;
 };
 
 export type IncomeSource = "sueldo" | "freelance" | "proyecto" | "anses" | "otro";
@@ -226,4 +231,43 @@ export type DailyContent = {
   saint: string | null;
   horoscope: { aries?: string; acuario?: string } | null;
   source: string | null;
+};
+
+// ── Cocina y eventos ──────────────────────────────────────
+export type Ingredient = { name: string; quantity: number | null; unit: string };
+
+export type PantryItem = {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  category: ShoppingCategory;
+  notes: string | null;
+  updated_at: string;
+};
+
+export type Recipe = {
+  id: string;
+  title: string;
+  portions: number;
+  ingredients: Ingredient[];
+  steps: string | null;
+  prep_minutes: number | null;
+  tags: string[];
+};
+
+export type MenuItem = { recipe_id: string | null; title: string; portions: number };
+
+export type FamilyEvent = {
+  id: string;
+  title: string;
+  event_date: string;
+  event_time: string | null;
+  location: string | null;
+  guests: number;
+  budget: number | null;
+  notes: string | null;
+  menu: MenuItem[];
+  status: "planning" | "done";
+  created_at: string;
 };

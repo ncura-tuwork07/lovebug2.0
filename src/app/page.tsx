@@ -5,7 +5,7 @@ import { getCurrentMember, getMembers } from "@/lib/data";
 import { addDays, formatARS, formatDay, todayAR } from "@/lib/format";
 import { daysUntilLabel, upcomingDates } from "@/lib/dates";
 import { computeWeeklySummary } from "@/lib/notify";
-import type { CalendarEvent, ImportantDate, MealPlan, Reminder, Task, Trip } from "@/lib/types";
+import type { CalendarEvent, FamilyEvent, ImportantDate, MealPlan, Reminder, Task, Trip } from "@/lib/types";
 import { TasksList } from "@/components/modules/TasksList";
 import { TripsList } from "@/components/modules/TripsList";
 import { EventsList } from "@/components/modules/EventsList";
@@ -20,7 +20,7 @@ export default async function HoyPage() {
   const in7 = addDays(today, 7);
   const dow = new Date(`${today}T12:00:00-03:00`).getUTCDay(); // 0 = domingo
 
-  const [members, tasksRes, tripsRes, eventsRes, remRes, datesRes, mealsRes, shopRes] = await Promise.all([
+  const [members, tasksRes, tripsRes, eventsRes, remRes, datesRes, mealsRes, shopRes, famRes] = await Promise.all([
     getMembers(),
     supabase.from("daily_tasks").select("*").lte("due_date", today).order("done").order("created_at"),
     supabase.from("logistics_trips").select("*").eq("trip_date", today).order("departure_time", { nullsFirst: false }),
@@ -34,6 +34,7 @@ export default async function HoyPage() {
     supabase.from("important_dates").select("*"),
     supabase.from("meal_plans").select("*").eq("day", today),
     supabase.from("shopping_items").select("id", { count: "exact", head: true }).eq("checked", false),
+    supabase.from("family_events").select("id, title, event_date, guests").eq("status", "planning").gte("event_date", today).lte("event_date", addDays(today, 30)).order("event_date"),
   ]);
   const me = await getCurrentMember(members);
 
@@ -44,6 +45,7 @@ export default async function HoyPage() {
   const dates = upcomingDates(today, (datesRes.data ?? []) as ImportantDate[], members).filter((d) => d.daysUntil <= 14);
   const meals = (mealsRes.data ?? []) as MealPlan[];
   const pendingShopping = shopRes.count ?? 0;
+  const famEvents = (famRes.data ?? []) as Pick<FamilyEvent, "id" | "title" | "event_date" | "guests">[];
   const summary = dow === 0 || dow === 1 ? await computeWeeklySummary(supabase, today) : null;
 
   const heading = new Date(`${today}T12:00:00-03:00`).toLocaleDateString("es-AR", {
@@ -103,7 +105,7 @@ export default async function HoyPage() {
         <EventsList events={events} members={members} compact />
       </section>
 
-      {(reminders.length > 0 || dates.length > 0) && (
+      {(reminders.length > 0 || dates.length > 0 || famEvents.length > 0) && (
         <section className="lb-card">
           <Link href="/vencimientos" className="mb-3 flex items-center justify-between">
             <h2 className="text-h2 flex items-center gap-2 font-display uppercase tracking-wide" style={{ color: "#F59E0B" }}>
@@ -123,6 +125,18 @@ export default async function HoyPage() {
                   <span className={`shrink-0 text-sm font-semibold ${days <= 0 ? "text-danger" : "text-amber"}`}>
                     {days < 0 ? "Vencido" : days === 0 ? "Hoy" : formatDay(r.due_date, "EEE d")}
                   </span>
+                </li>
+              );
+            })}
+            {famEvents.map((ev) => {
+              const d = Math.round((Date.parse(ev.event_date) - Date.parse(today)) / 86400000);
+              return (
+                <li key={ev.id} className="flex items-center justify-between gap-2">
+                  <Link href={`/eventos/${ev.id}`} className="text-ink">
+                    🎉 {ev.title}
+                    {ev.guests ? <span className="text-meta text-ink-faint"> · {ev.guests} inv.</span> : null}
+                  </Link>
+                  <span className="shrink-0 text-sm font-semibold text-coral">{daysUntilLabel(d)}</span>
                 </li>
               );
             })}

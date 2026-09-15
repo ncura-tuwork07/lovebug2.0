@@ -6,6 +6,7 @@ import type { ExpenseCategory, IncomeSource } from "@/lib/types";
 
 function revalidate() {
   revalidatePath("/finanzas");
+  revalidatePath("/eventos");
   revalidatePath("/");
 }
 
@@ -24,6 +25,7 @@ export type ExpenseInput = {
   paid_by: string | null;
   spent_at: string;
   is_fixed: boolean;
+  event_id?: string | null;
 };
 
 export async function saveExpense(input: ExpenseInput) {
@@ -35,6 +37,7 @@ export async function saveExpense(input: ExpenseInput) {
     paid_by: input.paid_by || null,
     spent_at: input.spent_at,
     is_fixed: input.is_fixed,
+    event_id: input.event_id || null,
   };
   if (!row.description) throw new Error("Falta la descripción.");
   const { error } = input.id

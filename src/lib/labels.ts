@@ -21,3 +21,12 @@ export const INCOME_SOURCES: Record<IncomeSource, string> = {
   anses: "ANSES / asignación",
   otro: "Otro",
 };
+
+export const SHOPPING_CATEGORIES: Record<import("@/lib/types").ShoppingCategory, string> = {
+  almacen: "Almacén",
+  frescos: "Frescos",
+  limpieza: "Limpieza",
+  chicos: "Chicos",
+  farmacia: "Farmacia",
+  otro: "Otro",
+};

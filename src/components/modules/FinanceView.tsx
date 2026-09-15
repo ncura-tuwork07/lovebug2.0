@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import { ArrowDownCircle, ArrowUpCircle, PiggyBank, Plus } from "lucide-react";
-import type { Budget, Expense, ExpenseCategory, Income, IncomeSource, Member, SavingsGoal } from "@/lib/types";
+import type { Budget, Expense, ExpenseCategory, FamilyEvent, Income, IncomeSource, Member, SavingsGoal } from "@/lib/types";
 import { BudgetsPanel } from "./BudgetsPanel";
 import {
   addToGoal,
@@ -29,6 +29,7 @@ export function FinanceView({
   expenses,
   goals,
   budgets,
+  events = [],
   members,
   currentMemberId,
   monthLabel,
@@ -37,6 +38,7 @@ export function FinanceView({
   expenses: Expense[];
   goals: SavingsGoal[];
   budgets: Budget[];
+  events?: Pick<FamilyEvent, "id" | "title">[];
   members: Member[];
   currentMemberId: string | null;
   monthLabel: string;
@@ -79,6 +81,7 @@ export function FinanceView({
         paid_by: f.opt("paid_by"),
         spent_at: f.str("spent_at"),
         is_fixed: f.bool("is_fixed"),
+        event_id: f.opt("event_id"),
       })
     );
   }
@@ -322,6 +325,18 @@ export function FinanceView({
               <Input name="spent_at" type="date" required defaultValue={expenseSheet.editing?.spent_at ?? todayAR()} />
             </Field>
           </div>
+          {events.length > 0 && (
+            <Field label="Es para un evento (opcional)">
+              <Select name="event_id" defaultValue={expenseSheet.editing?.event_id ?? ""}>
+                <option value="">No</option>
+                {events.map((ev) => (
+                  <option key={ev.id} value={ev.id}>
+                    {ev.title}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
           <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
             <input type="checkbox" name="is_fixed" defaultChecked={expenseSheet.editing?.is_fixed ?? false} className="h-5 w-5 accent-coral" />
             Es un gasto fijo mensual (alquiler, servicios, cuota)
