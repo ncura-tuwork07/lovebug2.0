@@ -14,6 +14,8 @@ function revalidate(id: string) {
 export type ProfileInput = {
   id: string;
   name: string;
+  role: string;
+  is_child: boolean;
   nickname: string | null;
   birthday: string | null;
   dni: string | null;
@@ -31,6 +33,8 @@ export async function updateProfile(input: ProfileInput) {
   const clean = (v: string | null) => v?.trim() || null;
   const row = {
     name: input.name.trim(),
+    role: input.role.trim() || "Adulto/a",
+    is_child: input.is_child,
     nickname: clean(input.nickname),
     birthday: input.birthday || null,
     dni: clean(input.dni),

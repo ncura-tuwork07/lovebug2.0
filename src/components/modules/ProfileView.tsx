@@ -10,6 +10,7 @@ import { Field, Input, Select, SubmitRow, Textarea } from "@/components/ui/Field
 import { MemberAvatar } from "@/components/ui/MemberChip";
 import { fd } from "@/components/ui/useSheet";
 import { formatDay } from "@/lib/format";
+import { ROLE_SUGGESTIONS } from "@/lib/roles";
 
 export const DOC_KINDS: Record<DocumentKind, string> = {
   dni: "DNI",
@@ -26,10 +27,12 @@ export function ProfileView({
   member,
   documents,
   isMe,
+  householdId,
 }: {
   member: Member;
   documents: (FamilyDocument & { url: string | null })[];
   isMe: boolean;
+  householdId: string;
 }) {
   const router = useRouter();
   const [color, setColor] = useState(member.color);
@@ -51,6 +54,8 @@ export function ProfileView({
       await updateProfile({
         id: member.id,
         name: f.str("name"),
+        role: f.str("role"),
+        is_child: f.bool("is_child"),
         nickname: f.opt("nickname"),
         birthday: f.opt("birthday"),
         dni: f.opt("dni"),
@@ -76,7 +81,7 @@ export function ProfileView({
     try {
       const supabase = createClient();
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${member.id}/avatar-${Date.now()}.${ext}`;
+      const path = `${householdId}/${member.id}/avatar-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
       if (upErr) throw new Error(upErr.message);
       const { data } = supabase.storage.from("avatars").getPublicUrl(path);
@@ -96,7 +101,7 @@ export function ProfileView({
       if (file.size > 15 * 1024 * 1024) throw new Error("El archivo es muy pesado (máximo 15 MB).");
       const supabase = createClient();
       const safe = file.name.replace(/[^\w.\-]+/g, "_");
-      const path = `${member.id}/${Date.now()}-${safe}`;
+      const path = `${householdId}/${member.id}/${Date.now()}-${safe}`;
       const { error: upErr } = await supabase.storage.from("documents").upload(path, file, { contentType: file.type });
       if (upErr) throw new Error(upErr.message);
       await addDocument({
@@ -186,6 +191,20 @@ export function ProfileView({
           <Field label="Apodo">
             <Input name="nickname" defaultValue={member.nickname ?? ""} placeholder="Naza, Jaz…" />
           </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Rol">
+            <Input name="role" list="lb-roles" defaultValue={member.role} maxLength={30} />
+            <datalist id="lb-roles">
+              {ROLE_SUGGESTIONS.map((r) => (
+                <option key={r} value={r} />
+              ))}
+            </datalist>
+          </Field>
+          <label className="flex items-center gap-3 pt-5">
+            <input type="checkbox" name="is_child" defaultChecked={member.is_child} className="h-5 w-5 accent-coral" />
+            <span className="text-item text-ink">Es menor</span>
+          </label>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Cumpleaños">

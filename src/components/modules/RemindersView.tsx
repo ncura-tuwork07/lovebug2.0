@@ -258,7 +258,7 @@ export function RemindersView({
               </Select>
             </Field>
             <Field label="Responsable">
-              <MemberSelect name="member_id" members={members.filter((m) => m.role === "parent")} defaultValue={remSheet.editing?.member_id ?? currentMemberId ?? ""} />
+              <MemberSelect name="member_id" members={members.filter((m) => !m.is_child)} defaultValue={remSheet.editing?.member_id ?? currentMemberId ?? ""} />
             </Field>
           </div>
           <Field label="Notas (opcional)">

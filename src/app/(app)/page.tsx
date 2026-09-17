@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { BellRing, CalendarHeart, CarFront, ChefHat, ChevronRight, ClipboardList, MapPin, ShoppingCart } from "lucide-react";
+import { BellRing, CalendarHeart, CarFront, ChefHat, ChevronRight, ClipboardList, MapPin, PartyPopper, ShoppingCart } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentMember, getMembers } from "@/lib/data";
+import { getSessionContext } from "@/lib/data";
+import { isModuleEnabled } from "@/lib/modules";
 import { addDays, formatARS, formatDay, todayAR } from "@/lib/format";
 import { daysUntilLabel, upcomingDates } from "@/lib/dates";
 import { computeWeeklySummary } from "@/lib/notify";
@@ -20,8 +21,8 @@ export default async function HoyPage() {
   const in7 = addDays(today, 7);
   const dow = new Date(`${today}T12:00:00-03:00`).getUTCDay(); // 0 = domingo
 
-  const [members, tasksRes, tripsRes, eventsRes, remRes, datesRes, mealsRes, shopRes, famRes] = await Promise.all([
-    getMembers(),
+  const [{ members, me, household }, tasksRes, tripsRes, eventsRes, remRes, datesRes, mealsRes, shopRes, famRes] = await Promise.all([
+    getSessionContext(),
     supabase.from("daily_tasks").select("*").lte("due_date", today).order("done").order("created_at"),
     supabase.from("logistics_trips").select("*").eq("trip_date", today).order("departure_time", { nullsFirst: false }),
     supabase
@@ -36,7 +37,7 @@ export default async function HoyPage() {
     supabase.from("shopping_items").select("id", { count: "exact", head: true }).eq("checked", false),
     supabase.from("family_events").select("id, title, event_date, guests").eq("status", "planning").gte("event_date", today).lte("event_date", addDays(today, 30)).order("event_date"),
   ]);
-  const me = await getCurrentMember(members);
+  const on = (key: string) => isModuleEnabled(household?.settings, key);
 
   const tasks = (tasksRes.data ?? []) as Task[];
   const trips = (tripsRes.data ?? []) as Trip[];
@@ -64,10 +65,11 @@ export default async function HoyPage() {
 
       {/* Accesos rápidos */}
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-        <Quick href="/compras" icon={ShoppingCart} color="#FF9F43" label={pendingShopping ? `Compras · ${pendingShopping}` : "Compras"} />
-        <Quick href="/mapa" icon={MapPin} color="#3B82F6" label="Mapa" />
-        <Quick href="/menu" icon={ChefHat} color="#0EA5A5" label={meals.length ? `Hoy: ${meals.map((m) => m.title).join(" / ")}` : "Menú"} />
-        <Quick href="/vencimientos" icon={BellRing} color="#F59E0B" label="Vencimientos" />
+        {on("compras") && <Quick href="/compras" icon={ShoppingCart} color="#FF9F43" label={pendingShopping ? `Compras · ${pendingShopping}` : "Compras"} />}
+        {on("mapa") && <Quick href="/mapa" icon={MapPin} color="#3B82F6" label="Mapa" />}
+        {on("menu") && <Quick href="/menu" icon={ChefHat} color="#0EA5A5" label={meals.length ? `Hoy: ${meals.map((m) => m.title).join(" / ")}` : "Menú"} />}
+        {on("vencimientos") && <Quick href="/vencimientos" icon={BellRing} color="#F59E0B" label="Vencimientos" />}
+        {on("eventos") && <Quick href="/eventos" icon={PartyPopper} color="#FF5A5F" label="Eventos" />}
       </div>
 
       {summary && (
@@ -85,6 +87,7 @@ export default async function HoyPage() {
 
       <TasksList tasks={tasks} members={members} currentMemberId={me?.id ?? null} date={today} />
 
+      {on("logistica") && (
       <section className="lb-card">
         <Link href="/logistica" className="mb-3 flex items-center justify-between">
           <h2 className="text-h2 flex items-center gap-2 font-display uppercase tracking-wide text-success">
@@ -94,6 +97,7 @@ export default async function HoyPage() {
         </Link>
         <TripsList trips={trips} members={members} currentMemberId={me?.id ?? null} compact />
       </section>
+      )}
 
       <section className="lb-card">
         <Link href="/calendario" className="mb-3 flex items-center justify-between">
@@ -150,7 +154,7 @@ export default async function HoyPage() {
         </section>
       )}
 
-      <DailyInspiration />
+      <DailyInspiration members={members} settings={household?.settings ?? null} />
     </div>
   );
 }

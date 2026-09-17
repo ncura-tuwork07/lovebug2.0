@@ -46,12 +46,13 @@ export async function sendPushToSubscriptions(subs: Sub[], payload: PushPayload)
   return sent;
 }
 
-// Envía a todos los dispositivos de la familia (o de un usuario en particular).
-export async function broadcastPush(payload: PushPayload, userId?: string): Promise<number> {
+// Envía a todos los dispositivos de un hogar (o de un usuario en particular).
+export async function broadcastPush(payload: PushPayload, target: { householdId?: string; userId?: string } = {}): Promise<number> {
   const admin = createAdminClient();
   if (!admin) return 0;
   let q = admin.from("push_subscriptions").select("endpoint, p256dh, auth");
-  if (userId) q = q.eq("user_id", userId);
+  if (target.householdId) q = q.eq("household_id", target.householdId);
+  if (target.userId) q = q.eq("user_id", target.userId);
   const { data } = await q;
   return sendPushToSubscriptions((data ?? []) as Sub[], payload);
 }

@@ -9,7 +9,7 @@ export async function saveBudget(category: string, monthlyLimit: number | string
   if (!Number.isFinite(limit) || limit <= 0) throw new Error("El límite tiene que ser mayor a cero.");
   const { error } = await supabase
     .from("budgets")
-    .upsert({ category, monthly_limit: Math.round(limit) }, { onConflict: "category" });
+    .upsert({ category, monthly_limit: Math.round(limit) }, { onConflict: "household_id,category" });
   if (error) throw new Error(error.message);
   revalidatePath("/finanzas");
 }

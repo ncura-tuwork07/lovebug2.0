@@ -7,7 +7,8 @@ import type { Member } from "@/lib/types";
 import { saveMember } from "@/app/actions/members";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Fab } from "@/components/ui/Fab";
-import { Field, Input, Select, SubmitRow } from "@/components/ui/Field";
+import { Field, Input, SubmitRow } from "@/components/ui/Field";
+import { DEFAULT_ROLE, ROLE_SUGGESTIONS } from "@/lib/roles";
 import { MemberAvatar } from "@/components/ui/MemberChip";
 import { fd, useSheet } from "@/components/ui/useSheet";
 import { formatDay } from "@/lib/format";
@@ -29,7 +30,8 @@ export function MembersList({ members, points }: { members: Member[]; points: Re
     sheet.run(() =>
       saveMember({
         name: f.str("name"),
-        role: f.str("role") as "parent" | "child",
+        role: f.str("role"),
+        is_child: f.bool("is_child"),
         color,
         birthday: f.opt("birthday"),
         notes: null,
@@ -55,13 +57,13 @@ export function MembersList({ members, points }: { members: Member[]; points: Re
                   {m.nickname && <span className="text-ink-faint"> · {m.nickname}</span>}
                 </p>
                 <p className="flex flex-wrap items-center gap-x-2 text-meta text-ink-faint">
-                  <span>{m.role === "parent" ? "Mamá / papá" : "Hijo/a"}</span>
+                  <span>{m.role}</span>
                   {m.birthday && (
                     <span className="inline-flex items-center gap-1">
                       <Cake size={11} /> {formatDay(m.birthday, "d 'de' MMM")}
                     </span>
                   )}
-                  {m.role === "child" && (
+                  {m.is_child && (
                     <span className="inline-flex items-center gap-1 text-amber">
                       <Star size={11} fill="currentColor" /> {points[m.id] ?? 0}
                     </span>
@@ -83,16 +85,25 @@ export function MembersList({ members, points }: { members: Member[]; points: Re
             <Input name="name" required autoFocus />
           </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Rol">
-              <Select name="role" defaultValue="child">
-                <option value="child">Hijo/a</option>
-                <option value="parent">Mamá / papá</option>
-              </Select>
+            <Field label="Rol" hint="Mamá, abuela, amigo, lo que sea.">
+              <Input name="role" list="lb-roles" defaultValue={DEFAULT_ROLE} maxLength={30} />
+              <datalist id="lb-roles">
+                {ROLE_SUGGESTIONS.map((r) => (
+                  <option key={r} value={r} />
+                ))}
+              </datalist>
             </Field>
             <Field label="Cumpleaños">
               <Input name="birthday" type="date" />
             </Field>
           </div>
+          <label className="flex items-center gap-3">
+            <input type="checkbox" name="is_child" className="h-5 w-5 accent-coral" />
+            <span className="text-item text-ink">
+              Es menor
+              <span className="block text-meta text-ink-faint">Suma puntos y premios; no aparece en finanzas ni horóscopo.</span>
+            </span>
+          </label>
           <Field label="Color" hint="Después completás foto, documentos y el resto desde su perfil.">
             <div className="flex flex-wrap gap-2">
               {PALETTE.map((c) => (

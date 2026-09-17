@@ -31,7 +31,7 @@ export async function saveMeal(input: MealInput): Promise<{ added: number; skipp
 
   const { error } = await supabase.from("meal_plans").upsert(
     { day: input.day, slot: input.slot, title, notes: input.notes?.trim() || null, recipe_id: recipe?.id ?? null, portions },
-    { onConflict: "day,slot" }
+    { onConflict: "household_id,day,slot" }
   );
   if (error) throw new Error(error.message);
 

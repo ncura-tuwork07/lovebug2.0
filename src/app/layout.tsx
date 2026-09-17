@@ -1,13 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit, Plus_Jakarta_Sans, Caveat } from "next/font/google";
 import "./globals.css";
-import { BottomNav } from "@/components/BottomNav";
-import { Header } from "@/components/Header";
 import { RefreshOnFocus } from "@/components/RefreshOnFocus";
 import { SwRegister } from "@/components/SwRegister";
-import { LocationSharer } from "@/components/LocationSharer";
-import { getCurrentMember, getMembers } from "@/lib/data";
-import { isSupabaseConfigured } from "@/lib/supabase/is-configured";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -29,7 +24,7 @@ const caveat = Caveat({
 
 export const metadata: Metadata = {
   title: "Lovebug",
-  description: "La familia, siempre en foco.",
+  description: "La familia, siempre en foco. Organización familiar compartida: calendario, logística, finanzas, compras, menú y más.",
   manifest: "/manifest.json",
   applicationName: "Lovebug",
   appleWebApp: {
@@ -57,25 +52,14 @@ export const viewport: Viewport = {
 // Aplica el tema guardado antes del primer render, para que no parpadee.
 const themeScript = `try{if(localStorage.getItem("lovebug-theme")==="dark"){document.documentElement.dataset.theme="dark";var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#131A29");}}catch(e){}`;
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  let me: { id: string; share_location: boolean } | null = null;
-  if (isSupabaseConfigured()) {
-    const members = await getMembers();
-    me = await getCurrentMember(members);
-  }
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" suppressHydrationWarning className={`${outfit.variable} ${jakarta.variable} ${caveat.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-cream text-ink">
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <RefreshOnFocus />
         <SwRegister />
-        <LocationSharer memberId={me?.id ?? null} enabled={me?.share_location ?? false} />
-        <div className="mx-auto w-full max-w-md flex-1">
-          <Header />
-          <main className="pb-28">{children}</main>
-        </div>
-        <BottomNav />
+        {children}
       </body>
     </html>
   );

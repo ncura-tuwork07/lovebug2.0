@@ -2,6 +2,8 @@
 // Se elige de forma determinística según el día del año, así cambia todos
 // los días sin necesitar backend ni una API externa.
 
+import { dayOfYear, fallbackHoroscopes } from "@/lib/content/horoscope";
+
 export type VerseOfDay = {
   reference: string;
   verse: string;
@@ -11,11 +13,6 @@ export type VerseOfDay = {
 export type PrayerOfDay = {
   title: string;
   text: string;
-};
-
-export type HoroscopeEntry = {
-  sign: "aries" | "acuario";
-  message: string;
 };
 
 export const VERSES: VerseOfDay[] = [
@@ -124,35 +121,6 @@ export const PRAYERS: PrayerOfDay[] = [
   },
 ];
 
-export const HOROSCOPE: Record<"aries" | "acuario", string[]> = {
-  aries: [
-    "Tu energía de hoy rinde más si la enfocás en una sola cosa a la vez, no en diez.",
-    "Buen día para resolver eso que venís posponiendo. Tu impulso natural te va a ayudar.",
-    "Cuidado con la impaciencia con la familia hoy: contá hasta tres antes de responder.",
-    "Tu liderazgo hoy se nota en los detalles chicos, no solo en las decisiones grandes.",
-    "Es un buen momento para proponer un plan nuevo en pareja; tu iniciativa va a ser bien recibida.",
-    "Canalizá el ímpetu del día en el ejercicio o una tarea física pendiente de la casa.",
-    "Hoy te conviene escuchar un poco más antes de actuar; la prisa puede jugarte en contra.",
-    "Tu determinación es justo lo que necesita hoy algún proyecto familiar trabado.",
-  ],
-  acuario: [
-    "Tu creatividad hoy puede resolver algo de forma distinta a como lo venían haciendo.",
-    "Buen día para conectar con amigos o familia que hace tiempo no ves.",
-    "Tu independencia es una virtud, pero hoy el equipo rinde más si sumás a los demás al plan.",
-    "Una idea que parecía poco convencional hoy puede ser justo la solución que faltaba.",
-    "Tu sensibilidad hoy te ayuda a notar algo que a otros se les pasó por alto en casa.",
-    "Es un buen momento para organizar algo original para los chicos, se van a sorprender.",
-    "Hoy rendís mejor si te das un rato a solas antes de encarar la lista de tareas.",
-    "Tu visión de largo plazo hoy le hace bien a las metas familiares que vienen posponiendo.",
-  ],
-};
-
-function dayOfYear(date: Date) {
-  const start = new Date(date.getFullYear(), 0, 0);
-  const diff = date.getTime() - start.getTime();
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
-}
-
 // Banco curado de respaldo: se usa cuando las fuentes online no responden.
 export function getFallbackContent(date: Date = new Date()) {
   const day = dayOfYear(date);
@@ -160,9 +128,6 @@ export function getFallbackContent(date: Date = new Date()) {
   return {
     verse: VERSES[day % VERSES.length],
     prayer: PRAYERS[day % PRAYERS.length],
-    horoscope: {
-      aries: HOROSCOPE.aries[day % HOROSCOPE.aries.length],
-      acuario: HOROSCOPE.acuario[day % HOROSCOPE.acuario.length],
-    },
+    horoscope: fallbackHoroscopes(date),
   };
 }

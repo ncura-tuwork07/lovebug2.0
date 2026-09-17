@@ -1,7 +1,8 @@
 export type Member = {
   id: string;
   name: string;
-  role: "parent" | "child";
+  role: string; // texto libre: "Mamá", "Abuela", "Amigo"…
+  is_child: boolean;
   color: string;
   birthday: string | null;
   notes: string | null;
@@ -229,7 +230,7 @@ export type DailyContent = {
   prayer_title: string | null;
   prayer_text: string | null;
   saint: string | null;
-  horoscope: { aries?: string; acuario?: string } | null;
+  horoscope: Partial<Record<string, string>> | null; // clave: signo en español (aries, tauro, …)
   source: string | null;
 };
 
@@ -269,5 +270,29 @@ export type FamilyEvent = {
   notes: string | null;
   menu: MenuItem[];
   status: "planning" | "done";
+  created_at: string;
+};
+
+// ── Hogares (multi-familia) ──────────────────────────────
+export type HouseholdSettings = {
+  modules?: Record<string, boolean>; // clave del módulo → activado (por defecto todos)
+  inspiration?: { gospel?: boolean; horoscope?: boolean };
+};
+
+export type Household = {
+  id: string;
+  name: string;
+  invite_code: string;
+  settings: HouseholdSettings;
+  created_by: string | null;
+  created_at: string;
+};
+
+export type Profile = {
+  user_id: string;
+  household_id: string | null;
+  email: string | null;
+  last_seen_at: string | null;
+  installed_at: string | null;
   created_at: string;
 };

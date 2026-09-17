@@ -178,7 +178,7 @@ export function TripsList({
             <Field label="Quién lleva">
               <MemberSelect
                 name="driver_id"
-                members={members.filter((m) => m.role === "parent")}
+                members={members.filter((m) => !m.is_child)}
                 noneLabel="Nadie / va solo"
                 defaultValue={sheet.editing?.driver_id ?? currentMemberId ?? ""}
               />

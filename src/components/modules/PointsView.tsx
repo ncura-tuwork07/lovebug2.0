@@ -27,7 +27,7 @@ export function PointsView({
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [redeemError, setRedeemError] = useState<string | null>(null);
 
-  const kids = members.filter((m) => m.role === "child");
+  const kids = members.filter((m) => m.is_child);
   const balance = (id: string) => ledger.filter((l) => l.member_id === id).reduce((s, l) => s + l.points, 0);
   const ranking = [...kids].sort((a, b) => balance(b.id) - balance(a.id));
 

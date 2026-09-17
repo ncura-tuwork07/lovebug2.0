@@ -45,7 +45,7 @@ export function FinanceView({
 }) {
   const [tab, setTab] = useState<Tab>("gastos");
   const [filter, setFilter] = useState<string>("all");
-  const parents = members.filter((m) => m.role === "parent");
+  const parents = members.filter((m) => !m.is_child);
 
   const expenseSheet = useSheet<Expense>();
   const incomeSheet = useSheet<Income>();

@@ -2,15 +2,17 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { getFallbackContent } from "@/lib/content/daily";
+import { fallbackHoroscopes } from "@/lib/content/horoscope";
+import { ZODIAC, ZODIAC_KEYS, type ZodiacKey } from "@/lib/zodiac";
 import type { DailyContent } from "@/lib/types";
 
 // Contenido "del día" para Hoy. Fuentes:
 //  - Evangelio, comentario y santo del día: publication.evangelizo.ws (católico, en español,
 //    sigue el calendario litúrgico real).
-//  - Horóscopo: freehoroscopeapi.com (en inglés).
+//  - Horóscopo: freehoroscopeapi.com (en inglés), los 12 signos.
 //  - Con ANTHROPIC_API_KEY: Claude escribe la reflexión familiar, la oración del día y
-//    adapta el horóscopo al español. Sin la key: comentario de Evangelizo + banco curado.
-// Se cachea en la tabla daily_content: una sola consulta a las fuentes por día.
+//    adapta los horóscopos al español. Sin la key: comentario de Evangelizo + banco curado.
+// Se cachea en la tabla daily_content (compartida por todos los hogares): una consulta a las fuentes por día.
 
 const EVANGELIZO = "https://publication.evangelizo.ws/SP/days";
 const HOROSCOPE = "https://freehoroscopeapi.com/api/v1/get-horoscope/daily";
@@ -90,16 +92,23 @@ async function fetchEvangelizo(day: string): Promise<Evangelizo | null> {
   };
 }
 
-async function fetchHoroscopeEn(sign: "aries" | "aquarius"): Promise<string | null> {
+async function fetchHoroscopeEn(sign: string): Promise<string | null> {
   const res = await getJson<{ data?: { horoscope?: string } }>(`${HOROSCOPE}?sign=${sign}&day=today`);
   return res?.data?.horoscope ?? null;
+}
+
+// Los 12 signos en inglés, en paralelo (solo se usan si Claude está configurado para adaptarlos).
+async function fetchAllHoroscopesEn(): Promise<Partial<Record<ZodiacKey, string>>> {
+  if (!process.env.ANTHROPIC_API_KEY) return {};
+  const entries = await Promise.all(ZODIAC.map(async (z) => [z.key, await fetchHoroscopeEn(z.en)] as const));
+  return Object.fromEntries(entries.filter(([, v]) => v)) as Partial<Record<ZodiacKey, string>>;
 }
 
 type Generated = {
   reflection: string;
   prayer_title: string;
   prayer_text: string;
-  horoscope: { aries: string; acuario: string };
+  horoscope: Partial<Record<ZodiacKey, string>>;
 };
 
 async function generateWithClaude(input: {
@@ -108,18 +117,17 @@ async function generateWithClaude(input: {
   gospel: Evangelizo["gospel"];
   commentary: Evangelizo["commentary"];
   saints: string[];
-  ariesEn: string | null;
-  aquariusEn: string | null;
+  horoscopesEn: Partial<Record<ZodiacKey, string>>;
 }): Promise<Generated | null> {
   if (!process.env.ANTHROPIC_API_KEY) return null;
 
   const client = new Anthropic();
-  const system = `Escribís para Lovebug, la app privada de organización familiar de Nazareno (Naza, Aries) y Jazmín (Jaz, Acuario), una pareja católica argentina con hijos. Tono: cálido, cercano, español rioplatense (voseo), nunca corporativo ni cursi. Respondé únicamente con un objeto JSON válido, sin texto antes ni después, con exactamente estas claves:
-{"reflection": string, "prayer_title": string, "prayer_text": string, "horoscope": {"aries": string, "acuario": string}}
+  const system = `Escribís para Lovebug, una app de organización familiar usada por parejas y familias católicas de Argentina. Tono: cálido, cercano, español rioplatense (voseo), nunca corporativo ni cursi. Respondé únicamente con un objeto JSON válido, sin texto antes ni después, con exactamente estas claves:
+{"reflection": string, "prayer_title": string, "prayer_text": string, "horoscope": {${ZODIAC_KEYS.map((k) => `"${k}": string`).join(", ")}}}
 - reflection: 2 o 3 oraciones que conecten el Evangelio de hoy con la vida familiar concreta (la casa, los chicos, la pareja, el trabajo). Podés apoyarte en el comentario provisto, sin copiarlo.
 - prayer_title: título corto (ej. "Oración de la mañana", "Oración a San X"). Si hay santo del día, podés inspirarte en él.
 - prayer_text: oración breve (3 a 5 líneas), católica, en primera persona del plural, pidiendo por la familia y el día.
-- horoscope.aries / horoscope.acuario: adaptación al español de los horóscopos en inglés, 1 o 2 oraciones cada uno, en segunda persona (vos), con un guiño práctico al día a día en familia. Sin promesas absolutas ni tono fatalista.`;
+- horoscope.<signo>: adaptación al español del horóscopo en inglés de cada signo, 1 o 2 oraciones cada uno, en segunda persona (vos), con un guiño práctico al día a día en familia. Sin promesas absolutas ni tono fatalista. Si falta el texto en inglés de un signo, escribilo igual con ese espíritu.`;
 
   const user = JSON.stringify(
     {
@@ -128,7 +136,7 @@ async function generateWithClaude(input: {
       evangelio: input.gospel,
       comentario: input.commentary,
       santos_del_dia: input.saints,
-      horoscopo_en: { aries: input.ariesEn, acuario: input.aquariusEn },
+      horoscopo_en: input.horoscopesEn,
     },
     null,
     1
@@ -152,7 +160,7 @@ async function generateWithClaude(input: {
       .join("");
     const json = text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
     const parsed = JSON.parse(json) as Generated;
-    if (!parsed.reflection || !parsed.horoscope?.aries || !parsed.horoscope?.acuario) return null;
+    if (!parsed.reflection || !parsed.horoscope || ZODIAC_KEYS.some((k) => !parsed.horoscope[k])) return null;
     return parsed;
   } catch (e) {
     console.error("[daily] Claude generation failed:", e instanceof Error ? e.message : e);
@@ -163,16 +171,17 @@ async function generateWithClaude(input: {
 export async function getDailyContent(day: string): Promise<DailyContent> {
   const supabase = await createClient();
 
+  const date = new Date(`${day}T12:00:00-03:00`);
   const { data: cached } = await supabase.from("daily_content").select("*").eq("day", day).maybeSingle();
-  if (cached) return cached as DailyContent;
+  if (cached) {
+    // Completa signos que falten en el cache (por ejemplo, filas guardadas cuando solo había dos).
+    const c = cached as DailyContent;
+    return { ...c, horoscope: { ...fallbackHoroscopes(date), ...(c.horoscope ?? {}) } };
+  }
 
-  const [ev, ariesEn, aquariusEn] = await Promise.all([
-    fetchEvangelizo(day),
-    fetchHoroscopeEn("aries"),
-    fetchHoroscopeEn("aquarius"),
-  ]);
+  const [ev, horoscopesEn] = await Promise.all([fetchEvangelizo(day), fetchAllHoroscopesEn()]);
 
-  const fallback = getFallbackContent(new Date(`${day}T12:00:00-03:00`));
+  const fallback = getFallbackContent(date);
 
   // Si Evangelizo no respondió, devolvemos el banco curado sin cachear, para reintentar en la próxima carga.
   if (!ev) {
@@ -195,8 +204,7 @@ export async function getDailyContent(day: string): Promise<DailyContent> {
     gospel: ev.gospel,
     commentary: ev.commentary,
     saints: ev.saints,
-    ariesEn,
-    aquariusEn,
+    horoscopesEn,
   });
 
   const reflection =

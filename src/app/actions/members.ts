@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 export type MemberInput = {
   id?: string;
   name: string;
-  role: "parent" | "child";
+  role: string;
+  is_child: boolean;
   color: string;
   birthday: string | null;
   notes: string | null;
@@ -20,7 +21,8 @@ export async function saveMember(input: MemberInput) {
   const supabase = await createClient();
   const row = {
     name: input.name.trim(),
-    role: input.role,
+    role: input.role.trim() || "Adulto/a",
+    is_child: input.is_child,
     color: input.color,
     birthday: input.birthday || null,
     notes: input.notes?.trim() || null,
