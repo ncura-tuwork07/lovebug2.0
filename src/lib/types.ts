@@ -186,6 +186,7 @@ export type Expense = {
   spent_at: string;
   is_fixed: boolean;
   event_id: string | null;
+  receipt_path: string | null;
 };
 
 export type IncomeSource = "sueldo" | "freelance" | "proyecto" | "anses" | "otro";
@@ -257,7 +258,54 @@ export type Recipe = {
   tags: string[];
 };
 
-export type MenuItem = { recipe_id: string | null; title: string; portions: number };
+// Plato del evento. "portions" es el total fijo (cuando no hay invitados cargados);
+// con invitados, el total sale de per_adult / per_child por cada uno (más ajustes por persona).
+export type MenuItem = {
+  key?: string;
+  recipe_id: string | null;
+  title: string;
+  portions: number;
+  per_adult?: number;
+  per_child?: number;
+};
+
+export type EventGuest = {
+  id: string;
+  event_id: string;
+  name: string;
+  member_id: string | null;
+  is_child: boolean;
+  confirmed: boolean;
+  notes: string | null;
+  portions: Record<string, number>; // key del plato → cantidad especial
+  sort_order: number;
+  created_at: string;
+};
+
+export type EventItemCategory = "comida" | "bebidas" | "decoracion" | "vajilla" | "otro";
+
+export type EventItem = {
+  id: string;
+  event_id: string;
+  category: EventItemCategory;
+  name: string;
+  quantity: string | null;
+  store: string | null;
+  estimated_cost: number | null;
+  done: boolean;
+  notes: string | null;
+  created_at: string;
+};
+
+export type EventAttachment = {
+  id: string;
+  event_id: string;
+  kind: "foto" | "ticket";
+  title: string | null;
+  file_path: string;
+  mime_type: string | null;
+  created_at: string;
+};
 
 export type FamilyEvent = {
   id: string;
@@ -270,13 +318,19 @@ export type FamilyEvent = {
   notes: string | null;
   menu: MenuItem[];
   status: "planning" | "done";
+  memory_note: string | null;
   created_at: string;
 };
 
 // ── Hogares (multi-familia) ──────────────────────────────
+export type Tradition = "catolica" | "cristiana" | "judia" | "ninguna";
 export type HouseholdSettings = {
   modules?: Record<string, boolean>; // clave del módulo → activado (por defecto todos)
-  inspiration?: { gospel?: boolean; horoscope?: boolean };
+  inspiration?: {
+    tradition?: Tradition; // qué lectura espiritual ver en Hoy (sin elegir → se pregunta la primera vez)
+    horoscope?: boolean;
+    gospel?: boolean; // legado: false equivale a tradition "ninguna"
+  };
 };
 
 export type Household = {

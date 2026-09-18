@@ -13,6 +13,7 @@ export type VerseOfDay = {
 export type PrayerOfDay = {
   title: string;
   text: string;
+  catholicOnly?: boolean; // santos, María: no se muestran a hogares evangélicos/protestantes
 };
 
 export const VERSES: VerseOfDay[] = [
@@ -81,6 +82,7 @@ export const VERSES: VerseOfDay[] = [
 export const PRAYERS: PrayerOfDay[] = [
   {
     title: "Oración de San Francisco de Asís",
+    catholicOnly: true,
     text: "Señor, hazme un instrumento de tu paz. Donde haya odio, que lleve yo el amor; donde haya ofensa, el perdón; donde haya duda, la fe; donde haya desesperación, la esperanza.",
   },
   {
@@ -89,6 +91,7 @@ export const PRAYERS: PrayerOfDay[] = [
   },
   {
     title: "Oración de Santa Teresa de Jesús",
+    catholicOnly: true,
     text: "Nada te turbe, nada te espante, todo se pasa, Dios no se muda. La paciencia todo lo alcanza. Quien a Dios tiene, nada le falta.",
   },
   {
@@ -97,6 +100,7 @@ export const PRAYERS: PrayerOfDay[] = [
   },
   {
     title: "Oración a San José, protector de la familia",
+    catholicOnly: true,
     text: "San José, guardián fiel de la Sagrada Familia, cuida también nuestro hogar, nuestro trabajo y nuestros hijos.",
   },
   {
@@ -109,6 +113,7 @@ export const PRAYERS: PrayerOfDay[] = [
   },
   {
     title: "Ave María (fragmento)",
+    catholicOnly: true,
     text: "Santa María, Madre de Dios, ruega por nosotros, pecadores, ahora y en la hora de nuestra muerte.",
   },
   {

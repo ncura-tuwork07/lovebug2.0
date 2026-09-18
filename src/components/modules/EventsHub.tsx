@@ -65,6 +65,7 @@ export function EventsHub({ events }: { events: FamilyEvent[] }) {
               )}
               {ev.budget && <span>· {formatARS(Number(ev.budget))}</span>}
             </p>
+            {ev.memory_note && <p className="mt-0.5 truncate font-accent text-lg leading-tight text-ink-soft">“{ev.memory_note}”</p>}
           </div>
           <div className="flex shrink-0 items-center gap-1">
             {ev.status !== "done" && days >= 0 && (

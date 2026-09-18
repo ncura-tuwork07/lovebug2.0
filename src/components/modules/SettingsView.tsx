@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookHeart, Check, ChevronRight, Copy, LogOut, RefreshCw, Share2, ShieldCheck, Sparkle, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { regenerateInviteCode, setInspirationSetting, setModuleEnabled, updateHouseholdName } from "@/app/actions/household";
+import { regenerateInviteCode, setModuleEnabled, updateHouseholdName } from "@/app/actions/household";
+import { InspirationSetup } from "@/components/InspirationSetup";
+import { traditionOf } from "@/lib/traditions";
 import { MODULES, isModuleEnabled } from "@/lib/modules";
 import { inviteLink } from "@/lib/app";
 import type { Household, Member } from "@/lib/types";
@@ -195,32 +197,8 @@ export function SettingsView({
         <h2 className="text-h2 mb-1 flex items-center gap-2 font-display uppercase tracking-wide text-amber">
           <BookHeart size={16} /> Inspiración de Hoy
         </h2>
-        <ul className="flex flex-col divide-y divide-line">
-          <li className="flex items-center gap-3 py-2.5">
-            <span className="flex-1">
-              <span className="block text-item font-semibold text-ink">Evangelio y oración del día</span>
-              <span className="block text-meta text-ink-faint">Lecturas católicas según el calendario litúrgico.</span>
-            </span>
-            <Switch
-              checked={household.settings.inspiration?.gospel !== false}
-              disabled={pending}
-              label="Evangelio"
-              onChange={(v) => act(() => setInspirationSetting("gospel", v))}
-            />
-          </li>
-          <li className="flex items-center gap-3 py-2.5">
-            <span className="flex-1">
-              <span className="block text-item font-semibold text-ink">Horóscopo</span>
-              <span className="block text-meta text-ink-faint">Según la fecha de nacimiento de cada adulto del hogar.</span>
-            </span>
-            <Switch
-              checked={household.settings.inspiration?.horoscope !== false}
-              disabled={pending}
-              label="Horóscopo"
-              onChange={(v) => act(() => setInspirationSetting("horoscope", v))}
-            />
-          </li>
-        </ul>
+        <p className="mb-3 text-body text-ink-soft">Qué lectura ven cada mañana (o ninguna) y si quieren horóscopo.</p>
+        <InspirationSetup compact current={traditionOf(household.settings)} horoscope={household.settings.inspiration?.horoscope !== false} />
       </section>
 
       <PushSetup />

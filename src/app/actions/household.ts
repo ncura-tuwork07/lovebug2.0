@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { HouseholdSettings } from "@/lib/types";
+import type { HouseholdSettings, Tradition } from "@/lib/types";
 
 const COLORS = ["#3B82F6", "#EC4899", "#10B981", "#F59E0B", "#8B5CF6", "#0EA5A5"];
 
@@ -95,4 +95,12 @@ export async function trackUsage(path: string, installed: boolean): Promise<void
       ? supabase.from("profiles").update({ installed_at: now }).eq("user_id", user.id).is("installed_at", null)
       : Promise.resolve(null),
   ]);
+}
+
+// Qué ver cada mañana en Hoy: tradición (o ninguna) y horóscopo.
+export async function setInspiration(input: { tradition: Tradition; horoscope: boolean }): Promise<void> {
+  await mergeSettings((s) => ({
+    ...s,
+    inspiration: { ...(s.inspiration ?? {}), tradition: input.tradition, horoscope: input.horoscope, gospel: input.tradition !== "ninguna" },
+  }));
 }
