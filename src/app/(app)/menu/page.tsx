@@ -1,6 +1,6 @@
 import { parseISO, startOfWeek, format } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentMember, getMembers } from "@/lib/data";
+import { getSessionContext } from "@/lib/data";
 import { addDays, todayAR } from "@/lib/format";
 import type { MealPlan, PantryItem, Recipe } from "@/lib/types";
 import { MealPlanner } from "@/components/modules/MealPlanner";
@@ -14,13 +14,12 @@ export default async function MenuPage({ searchParams }: { searchParams: Promise
   const weekStart = format(startOfWeek(parseISO(base), { weekStartsOn: 1 }), "yyyy-MM-dd");
 
   const supabase = await createClient();
-  const [members, mealsRes, recipesRes, pantryRes] = await Promise.all([
-    getMembers(),
+  const [{ me }, mealsRes, recipesRes, pantryRes] = await Promise.all([
+    getSessionContext(),
     supabase.from("meal_plans").select("*").gte("day", weekStart).lte("day", addDays(weekStart, 6)),
     supabase.from("recipes").select("*").order("title"),
     supabase.from("pantry_items").select("*"),
   ]);
-  const me = await getCurrentMember(members);
 
   return (
     <div className="flex flex-col gap-6 px-4 pt-6">

@@ -1,4 +1,6 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+"use client";
+
+import { useState, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import type { Member } from "@/lib/types";
 
 export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
@@ -38,6 +40,41 @@ export function MemberSelect({
         </option>
       ))}
     </Select>
+  );
+}
+
+// Elegir entre dos opciones con un toque (nada de tipear ni de un checkbox que se puede pasar por
+// alto): manda el valor por un input oculto, así los forms que usan fd().bool(name) no cambian.
+export function BoolToggle({
+  name,
+  defaultValue = false,
+  falseLabel,
+  trueLabel,
+}: {
+  name: string;
+  defaultValue?: boolean;
+  falseLabel: string;
+  trueLabel: string;
+}) {
+  const [value, setValue] = useState(defaultValue);
+  return (
+    <div className="flex h-11 overflow-hidden rounded-md border-[1.5px] border-line">
+      <input type="hidden" name={name} value={value ? "on" : ""} />
+      {[
+        { label: falseLabel, checked: false },
+        { label: trueLabel, checked: true },
+      ].map((opt) => (
+        <button
+          key={opt.label}
+          type="button"
+          aria-pressed={value === opt.checked}
+          onClick={() => setValue(opt.checked)}
+          className={`flex-1 text-sm font-semibold transition-colors ${value === opt.checked ? "bg-coral text-white" : "text-ink-soft"}`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
   );
 }
 

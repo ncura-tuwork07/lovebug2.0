@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Contact } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getMembers, getSessionContext } from "@/lib/data";
+import { getSessionContext } from "@/lib/data";
 import { isModuleEnabled } from "@/lib/modules";
 import { MembersList } from "@/components/modules/MembersList";
 
@@ -9,10 +9,9 @@ export const dynamic = "force-dynamic";
 
 export default async function FamiliaPage() {
   const supabase = await createClient();
-  const [members, { data: ledger }, { household }] = await Promise.all([
-    getMembers(),
-    supabase.from("points_ledger").select("member_id, points"),
+  const [{ members, household }, { data: ledger }] = await Promise.all([
     getSessionContext(),
+    supabase.from("points_ledger").select("member_id, points"),
   ]);
   const points: Record<string, number> = {};
   for (const l of ledger ?? []) points[l.member_id] = (points[l.member_id] ?? 0) + l.points;

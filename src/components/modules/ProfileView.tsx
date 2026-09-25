@@ -6,7 +6,7 @@ import { Camera, FileText, MapPin, Paperclip, Trash2, Upload } from "lucide-reac
 import type { DocumentKind, FamilyDocument, Member } from "@/lib/types";
 import { addDocument, deleteDocument, setPhoto, setShareLocation, updateProfile } from "@/app/actions/profile";
 import { createClient } from "@/lib/supabase/client";
-import { Field, Input, Select, SubmitRow, Textarea } from "@/components/ui/Field";
+import { BoolToggle, Field, Input, Select, SubmitRow, Textarea } from "@/components/ui/Field";
 import { MemberAvatar } from "@/components/ui/MemberChip";
 import { fd } from "@/components/ui/useSheet";
 import { formatDay } from "@/lib/format";
@@ -193,7 +193,7 @@ export function ProfileView({
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Rol">
+          <Field label="Rol" hint="Mamá, papá, hijo, abuela… no tiene que ver con la edad.">
             <Input name="role" list="lb-roles" defaultValue={member.role} maxLength={30} />
             <datalist id="lb-roles">
               {ROLE_SUGGESTIONS.map((r) => (
@@ -201,10 +201,9 @@ export function ProfileView({
               ))}
             </datalist>
           </Field>
-          <label className="flex items-center gap-3 pt-5">
-            <input type="checkbox" name="is_child" defaultChecked={member.is_child} className="h-5 w-5 accent-coral" />
-            <span className="text-item text-ink">Es menor</span>
-          </label>
+          <Field label="Edad" hint="Menor: suma puntos y premios; no aparece en finanzas ni horóscopo.">
+            <BoolToggle name="is_child" defaultValue={member.is_child} falseLabel="Adulto/a" trueLabel="Menor" />
+          </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Cumpleaños">

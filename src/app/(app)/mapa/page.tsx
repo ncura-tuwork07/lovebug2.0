@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentMember, getMembers } from "@/lib/data";
+import { getSessionContext } from "@/lib/data";
 import type { MemberLocation } from "@/lib/types";
 import { FamilyMap } from "@/components/modules/FamilyMap";
 
@@ -7,8 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function MapaPage() {
   const supabase = await createClient();
-  const [members, { data }] = await Promise.all([getMembers(), supabase.from("locations").select("*")]);
-  const me = await getCurrentMember(members);
+  const [{ members, me }, { data }] = await Promise.all([getSessionContext(), supabase.from("locations").select("*")]);
 
   return (
     <div className="flex flex-col gap-5 px-4 pt-6">

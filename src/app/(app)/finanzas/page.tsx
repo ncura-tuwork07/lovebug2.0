@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentMember, getMembers } from "@/lib/data";
+import { getSessionContext } from "@/lib/data";
 import { addMonths, monthRange, todayAR } from "@/lib/format";
 import type { Budget, Expense, Income, SavingsGoal } from "@/lib/types";
 import { FinanceView } from "@/components/modules/FinanceView";
@@ -17,8 +17,8 @@ export default async function FinanzasPage({ searchParams }: { searchParams: Pro
   const isFuture = from > today;
   const isPast = to < today;
 
-  const [members, incomesRes, expensesRes, goalsRes, budgetsRes, eventsRes, remindersRes, cyclesRes] = await Promise.all([
-    getMembers(),
+  const [{ members, me }, incomesRes, expensesRes, goalsRes, budgetsRes, eventsRes, remindersRes, cyclesRes] = await Promise.all([
+    getSessionContext(),
     supabase.from("incomes").select("*").gte("received_at", from).lte("received_at", to).order("received_at", { ascending: false }).order("created_at", { ascending: false }),
     supabase.from("expenses").select("*").gte("spent_at", from).lte("spent_at", to).order("spent_at", { ascending: false }).order("created_at", { ascending: false }),
     supabase.from("savings_goals").select("*").order("created_at"),
@@ -28,8 +28,6 @@ export default async function FinanzasPage({ searchParams }: { searchParams: Pro
     supabase.from("reminders").select("*").eq("repeat", "monthly").or(`repeat_until.is.null,repeat_until.gte.${from}`).order("title"),
     supabase.from("bill_cycles").select("*").eq("month", from),
   ]);
-  const me = await getCurrentMember(members);
-
   const monthLabel = new Date(`${from}T12:00:00-03:00`).toLocaleDateString("es-AR", {
     month: "long",
     year: from.slice(0, 4) === today.slice(0, 4) ? undefined : "numeric",

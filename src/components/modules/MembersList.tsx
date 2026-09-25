@@ -7,7 +7,7 @@ import type { Member } from "@/lib/types";
 import { saveMember } from "@/app/actions/members";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Fab } from "@/components/ui/Fab";
-import { Field, Input, SubmitRow } from "@/components/ui/Field";
+import { BoolToggle, Field, Input, SubmitRow } from "@/components/ui/Field";
 import { DEFAULT_ROLE, ROLE_SUGGESTIONS } from "@/lib/roles";
 import { MemberAvatar } from "@/components/ui/MemberChip";
 import { fd, useSheet } from "@/components/ui/useSheet";
@@ -85,7 +85,7 @@ export function MembersList({ members, points }: { members: Member[]; points: Re
             <Input name="name" required autoFocus />
           </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Rol" hint="Mamá, abuela, amigo, lo que sea.">
+            <Field label="Rol" hint="Mamá, abuela, amigo, lo que sea (no la edad).">
               <Input name="role" list="lb-roles" defaultValue={DEFAULT_ROLE} maxLength={30} />
               <datalist id="lb-roles">
                 {ROLE_SUGGESTIONS.map((r) => (
@@ -97,13 +97,9 @@ export function MembersList({ members, points }: { members: Member[]; points: Re
               <Input name="birthday" type="date" />
             </Field>
           </div>
-          <label className="flex items-center gap-3">
-            <input type="checkbox" name="is_child" className="h-5 w-5 accent-coral" />
-            <span className="text-item text-ink">
-              Es menor
-              <span className="block text-meta text-ink-faint">Suma puntos y premios; no aparece en finanzas ni horóscopo.</span>
-            </span>
-          </label>
+          <Field label="Edad" hint="Menor: suma puntos y premios; no aparece en finanzas ni horóscopo.">
+            <BoolToggle name="is_child" falseLabel="Adulto/a" trueLabel="Menor" />
+          </Field>
           <Field label="Color" hint="Después completás foto, documentos y el resto desde su perfil.">
             <div className="flex flex-wrap gap-2">
               {PALETTE.map((c) => (

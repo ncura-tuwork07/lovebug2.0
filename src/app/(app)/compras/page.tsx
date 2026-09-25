@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentMember, getMembers } from "@/lib/data";
+import { getSessionContext } from "@/lib/data";
 import type { ShoppingItem } from "@/lib/types";
 import { ShoppingList } from "@/components/modules/ShoppingList";
 
@@ -8,12 +8,11 @@ export const dynamic = "force-dynamic";
 
 export default async function ComprasPage() {
   const supabase = await createClient();
-  const [members, { data }, { data: events }] = await Promise.all([
-    getMembers(),
+  const [{ members, me }, { data }, { data: events }] = await Promise.all([
+    getSessionContext(),
     supabase.from("shopping_items").select("*").order("checked").order("created_at"),
     supabase.from("family_events").select("id, title"),
   ]);
-  const me = await getCurrentMember(members);
   const eventNames = Object.fromEntries((events ?? []).map((e) => [e.id, e.title]));
 
   return (

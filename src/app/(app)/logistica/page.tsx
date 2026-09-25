@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentMember, getMembers } from "@/lib/data";
+import { getSessionContext } from "@/lib/data";
 import { addDays, todayAR } from "@/lib/format";
 import type { Trip } from "@/lib/types";
 import { TripsList } from "@/components/modules/TripsList";
@@ -10,8 +10,8 @@ export default async function LogisticaPage() {
   const supabase = await createClient();
   const today = todayAR();
 
-  const [members, { data }] = await Promise.all([
-    getMembers(),
+  const [{ members, me }, { data }] = await Promise.all([
+    getSessionContext(),
     supabase
       .from("logistics_trips")
       .select("*")
@@ -20,7 +20,6 @@ export default async function LogisticaPage() {
       .order("trip_date")
       .order("departure_time", { nullsFirst: false }),
   ]);
-  const me = await getCurrentMember(members);
 
   return (
     <div className="flex flex-col gap-6 px-4 pt-6">

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getContacts, getCurrentMember, getMembers } from "@/lib/data";
+import { getContacts, getSessionContext } from "@/lib/data";
 import type { ImportantDate, Reminder } from "@/lib/types";
 import { RemindersView } from "@/components/modules/RemindersView";
 
@@ -7,13 +7,12 @@ export const dynamic = "force-dynamic";
 
 export default async function VencimientosPage() {
   const supabase = await createClient();
-  const [members, remRes, datesRes, contacts] = await Promise.all([
-    getMembers(),
+  const [{ members, me }, remRes, datesRes, contacts] = await Promise.all([
+    getSessionContext(),
     supabase.from("reminders").select("*").order("due_date"),
     supabase.from("important_dates").select("*"),
     getContacts(),
   ]);
-  const me = await getCurrentMember(members);
 
   return (
     <div className="flex flex-col gap-6 px-4 pt-6">

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getMembers } from "@/lib/data";
+import { getSessionContext } from "@/lib/data";
 import type { PointsEntry, Reward } from "@/lib/types";
 import { PointsView } from "@/components/modules/PointsView";
 
@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 
 export default async function PuntosPage() {
   const supabase = await createClient();
-  const [members, ledgerRes, rewardsRes] = await Promise.all([
-    getMembers(),
+  const [{ members }, ledgerRes, rewardsRes] = await Promise.all([
+    getSessionContext(),
     supabase.from("points_ledger").select("*").order("created_at", { ascending: false }).limit(200),
     supabase.from("rewards").select("*").eq("active", true).order("cost"),
   ]);
