@@ -19,6 +19,7 @@ export const INCOME_SOURCES: Record<IncomeSource, string> = {
   freelance: "Freelance / tercerizado",
   proyecto: "Proyecto",
   anses: "ANSES / asignación",
+  reintegro: "Reintegro",
   otro: "Otro",
 };
 

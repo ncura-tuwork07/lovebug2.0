@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { LocationSharer } from "@/components/LocationSharer";
 import { HouseholdProvider } from "@/components/HouseholdProvider";
 import { UsageTracker } from "@/components/UsageTracker";
+import { PasskeyPrompt } from "@/components/auth/PasskeyPrompt";
 import { getSessionContext } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <HouseholdProvider value={{ household, me, members }}>
       <UsageTracker />
+      <PasskeyPrompt />
       <LocationSharer memberId={me.id} enabled={me.share_location} />
       <div className="mx-auto w-full max-w-md flex-1">
         <Header />

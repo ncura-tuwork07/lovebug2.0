@@ -191,7 +191,7 @@ export type Expense = {
   is_draft: boolean; // "modo borrador": hipótesis para un mes futuro, no cuenta como real
 };
 
-export type IncomeSource = "sueldo" | "freelance" | "proyecto" | "anses" | "otro";
+export type IncomeSource = "sueldo" | "freelance" | "proyecto" | "anses" | "reintegro" | "otro";
 
 export type Income = {
   id: string;
@@ -297,6 +297,29 @@ export type EventGuest = {
   notes: string | null;
   portions: Record<string, number>; // key del plato → cantidad especial
   sort_order: number;
+  created_at: string;
+};
+
+// ── División de gastos de un evento ──────────────────────
+export type EventSplit = {
+  id: string;
+  event_id: string;
+  method: "equal" | "manual";
+  payer_member_id: string | null;
+  payment_info: string | null; // alias, CBU o link de pago, texto libre
+  share_token: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EventSplitShare = {
+  id: string;
+  event_split_id: string;
+  guest_id: string;
+  amount: number;
+  status: "pendiente" | "pagado";
+  paid_note: string | null;
+  income_id: string | null;
   created_at: string;
 };
 

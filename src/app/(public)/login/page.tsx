@@ -30,6 +30,10 @@ function LoginForm() {
       return;
     }
 
+    // Recién entraste con contraseña: adentro te ofrecemos activar la huella en este celu.
+    try {
+      sessionStorage.setItem("lb-offer-passkey", "1");
+    } catch {}
     router.push(next.startsWith("/") ? next : "/");
     router.refresh();
   }
@@ -60,9 +64,6 @@ function LoginForm() {
           {loading ? "Entrando..." : "Entrar"}
         </button>
       </form>
-      <div className="my-3 flex items-center gap-2 text-xs text-white/40">
-        <span className="h-px flex-1 bg-white/15" />o<span className="h-px flex-1 bg-white/15" />
-      </div>
       <PasskeyLoginButton next={next} onError={setError} />
     </AuthShell>
   );

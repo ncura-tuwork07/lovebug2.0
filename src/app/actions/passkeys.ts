@@ -58,7 +58,8 @@ export async function getPasskeyRegistrationOptions() {
     userDisplayName: user.email,
     attestationType: "none",
     excludeCredentials: (existing ?? []).map((p) => ({ id: p.id as string, transports: (p.transports ?? undefined) as ("ble" | "hybrid" | "internal" | "nfc" | "usb")[] | undefined })),
-    authenticatorSelection: { residentKey: "preferred", userVerification: "preferred" },
+    // "platform": la llave queda en este celu y se desbloquea con la huella o el patrón/PIN de pantalla.
+    authenticatorSelection: { authenticatorAttachment: "platform", residentKey: "preferred", userVerification: "required" },
   });
 
   const admin = requireAdmin();
@@ -110,7 +111,7 @@ export async function deletePasskey(id: string): Promise<void> {
 export async function getPasskeyLoginOptions() {
   const options = await generateAuthenticationOptions({
     rpID: await getRpID(),
-    userVerification: "preferred",
+    userVerification: "required",
   });
   const admin = requireAdmin();
   const challengeId = await saveChallenge(admin, options.challenge, null);

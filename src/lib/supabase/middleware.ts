@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isSupabaseConfigured } from "./is-configured";
 
 // Rutas que se pueden ver sin sesión.
-const PUBLIC_PREFIXES = ["/bienvenida", "/login", "/registro", "/invitacion", "/restablecer", "/auth"];
+const PUBLIC_PREFIXES = ["/bienvenida", "/login", "/registro", "/invitacion", "/restablecer", "/auth", "/pagar"];
 // Con sesión iniciada, estas rutas mandan directo a la app.
 const GUEST_ONLY = ["/bienvenida", "/login", "/registro"];
 
