@@ -5,6 +5,7 @@ export const TRADITIONS: { key: Tradition; label: string; desc: string; emoji: s
   { key: "cristiana", label: "Cristiana", desc: "Versículo del día y oración (evangélica, protestante, otras).", emoji: "📖" },
   { key: "judia", label: "Judía", desc: "Enseñanza de la Torá, parashá y velas de Shabat.", emoji: "✡️" },
   { key: "ninguna", label: "Sin religión", desc: "Un pensamiento del día, sin contenido religioso.", emoji: "🌱" },
+  { key: "otra", label: "Otra / no está en la lista", desc: "Contanos cuál, y mientras usás Sin religión.", emoji: "🙏" },
 ];
 
 // Resuelve la tradición efectiva (con compatibilidad con el switch viejo "gospel").

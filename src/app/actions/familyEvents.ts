@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { EventGuest, EventItemCategory, MenuItem, PantryItem, Recipe } from "@/lib/types";
 import { checkPantry, mergeIngredients, scaleIngredients, toShoppingLine } from "@/lib/kitchen";
 import { EVENT_ITEM_TO_SHOPPING, menuItemTotal } from "@/lib/events";
+import { findOrCreateContactsByName } from "@/app/actions/contacts";
 
 function revalidate(id?: string) {
   revalidatePath("/eventos");
@@ -164,6 +165,7 @@ export type GuestInput = {
   confirmed: boolean;
   notes: string | null;
   portions?: Record<string, number>;
+  saveToCircle?: boolean; // crea (o reutiliza) un contacto del Círculo con este nombre y lo vincula
 };
 
 async function syncGuestCount(supabase: Sb, eventId: string) {
@@ -183,7 +185,22 @@ export async function saveGuest(eventId: string, input: GuestInput) {
       .map(([k, v]) => [k, Number(v)] as const)
       .filter(([, v]) => Number.isFinite(v) && v >= 0)
   );
-  const row = { name, member_id: input.member_id || null, is_child: input.is_child, confirmed: input.confirmed, notes: input.notes?.trim() || null, portions };
+  // Solo tocamos el vínculo con el Círculo si nos pidieron guardarlo ahora; si no, se conserva el que ya tenía.
+  let contact_id: string | undefined;
+  if (input.saveToCircle && !input.member_id) {
+    const created = await findOrCreateContactsByName([name]);
+    contact_id = created[name];
+    if (contact_id && input.is_child) await supabase.from("contacts").update({ is_child: true }).eq("id", contact_id).eq("is_child", false);
+  }
+  const row = {
+    name,
+    member_id: input.member_id || null,
+    ...(contact_id ? { contact_id } : {}),
+    is_child: input.is_child,
+    confirmed: input.confirmed,
+    notes: input.notes?.trim() || null,
+    portions,
+  };
   const { error } = input.id
     ? await supabase.from("event_guests").update(row).eq("id", input.id)
     : await supabase.from("event_guests").insert({ ...row, event_id: eventId });
@@ -193,6 +210,7 @@ export async function saveGuest(eventId: string, input: GuestInput) {
 }
 
 // Agrega varios de una (uno por línea o coma): "tío Pancho, abuela Cata, Abril".
+// Si el nombre coincide con alguien del Círculo, lo vincula solo (evita cargarlo de nuevo cada vez).
 export async function addGuestsBulk(eventId: string, text: string): Promise<number> {
   const supabase = await createClient();
   const names = text
@@ -200,8 +218,36 @@ export async function addGuestsBulk(eventId: string, text: string): Promise<numb
     .map((s) => s.trim())
     .filter(Boolean);
   if (!names.length) return 0;
-  const { count } = await supabase.from("event_guests").select("id", { count: "exact", head: true }).eq("event_id", eventId);
-  const rows = names.map((name, i) => ({ event_id: eventId, name, sort_order: (count ?? 0) + i }));
+  const [{ count }, { data: circle }] = await Promise.all([
+    supabase.from("event_guests").select("id", { count: "exact", head: true }).eq("event_id", eventId),
+    supabase.from("contacts").select("id, name, is_child").is("archived_at", null),
+  ]);
+  const byLower = new Map((circle ?? []).map((c) => [c.name.toLowerCase(), c] as const));
+  const rows = names.map((name, i) => {
+    const match = byLower.get(name.toLowerCase());
+    return { event_id: eventId, name, contact_id: match?.id ?? null, is_child: match?.is_child ?? false, sort_order: (count ?? 0) + i };
+  });
+  const { error } = await supabase.from("event_guests").insert(rows);
+  if (error) throw new Error(error.message);
+  await syncGuestCount(supabase, eventId);
+  revalidate(eventId);
+  return rows.length;
+}
+
+// Del Círculo: agrega a quienes elijas (ya tildados), con si son peques resuelto solo.
+export async function addContactsAsGuests(eventId: string, contactIds: string[]): Promise<number> {
+  const supabase = await createClient();
+  if (!contactIds.length) return 0;
+  const [{ data: contacts }, { data: existing }, { count }] = await Promise.all([
+    supabase.from("contacts").select("id, name, is_child").in("id", contactIds),
+    supabase.from("event_guests").select("contact_id").eq("event_id", eventId),
+    supabase.from("event_guests").select("id", { count: "exact", head: true }).eq("event_id", eventId),
+  ]);
+  const have = new Set((existing ?? []).map((g) => g.contact_id).filter(Boolean));
+  const rows = (contacts ?? [])
+    .filter((c) => !have.has(c.id))
+    .map((c, i) => ({ event_id: eventId, name: c.name, contact_id: c.id, is_child: c.is_child, sort_order: (count ?? 0) + i }));
+  if (!rows.length) return 0;
   const { error } = await supabase.from("event_guests").insert(rows);
   if (error) throw new Error(error.message);
   await syncGuestCount(supabase, eventId);
@@ -328,7 +374,10 @@ export async function addEventExpense(
   revalidate(eventId);
 }
 
-export async function addEventAttachment(eventId: string, input: { kind: "foto" | "ticket"; title: string | null; file_path: string; mime_type: string | null }) {
+export async function addEventAttachment(
+  eventId: string,
+  input: { kind: "foto" | "video" | "audio" | "ticket" | "archivo"; title: string | null; file_path: string; mime_type: string | null; size_bytes?: number | null }
+) {
   const supabase = await createClient();
   const { error } = await supabase.from("event_attachments").insert({ ...input, event_id: eventId, title: input.title?.trim() || null });
   if (error) throw new Error(error.message);

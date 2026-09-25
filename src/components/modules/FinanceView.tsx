@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
-import { ArrowDownCircle, ArrowUpCircle, PiggyBank, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowDownCircle, ArrowUpCircle, FlaskConical, PiggyBank, Plus } from "lucide-react";
 import type { Budget, Expense, ExpenseCategory, FamilyEvent, Income, IncomeSource, Member, SavingsGoal } from "@/lib/types";
 import { BudgetsPanel } from "./BudgetsPanel";
+import { RecurringBills, type BillRow } from "./RecurringBills";
 import {
   addToGoal,
+  confirmDraftMonth,
   deleteExpense,
   deleteGoal,
   deleteIncome,
@@ -33,6 +36,10 @@ export function FinanceView({
   members,
   currentMemberId,
   monthLabel,
+  month,
+  isFuture = false,
+  isPast = false,
+  bills = [],
 }: {
   incomes: Income[];
   expenses: Expense[];
@@ -42,10 +49,17 @@ export function FinanceView({
   members: Member[];
   currentMemberId: string | null;
   monthLabel: string;
+  month?: string;
+  isFuture?: boolean;
+  isPast?: boolean;
+  bills?: BillRow[];
 }) {
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("gastos");
   const [filter, setFilter] = useState<string>("all");
+  const [confirming, setConfirming] = useState(false);
   const parents = members.filter((m) => !m.is_child);
+  const draftCount = incomes.filter((i) => i.is_draft).length + expenses.filter((e) => e.is_draft).length;
 
   const expenseSheet = useSheet<Expense>();
   const incomeSheet = useSheet<Income>();
@@ -82,6 +96,7 @@ export function FinanceView({
         spent_at: f.str("spent_at"),
         is_fixed: f.bool("is_fixed"),
         event_id: f.opt("event_id"),
+        is_draft: expenseSheet.editing ? expenseSheet.editing.is_draft : isFuture,
       })
     );
   }
@@ -98,6 +113,7 @@ export function FinanceView({
         member_id: f.opt("member_id"),
         received_at: f.str("received_at"),
         is_recurring: f.bool("is_recurring"),
+        is_draft: incomeSheet.editing ? incomeSheet.editing.is_draft : isFuture,
       })
     );
   }
@@ -132,6 +148,46 @@ export function FinanceView({
 
   return (
     <div className="flex flex-col gap-5">
+      {isFuture && (
+        <section className="lb-card flex items-start gap-3 !bg-info-soft">
+          <FlaskConical size={20} className="mt-0.5 shrink-0 text-info" />
+          <div>
+            <p className="font-display font-semibold text-ink">Modo borrador</p>
+            <p className="text-body text-ink-soft">
+              Es {monthLabel} todavía no llegó: lo que cargues acá es una hipótesis, no cuenta como real hasta que confirmes el mes (o hasta
+              que llegue y sigas cargando lo que va pasando de verdad).
+            </p>
+          </div>
+        </section>
+      )}
+      {!isFuture && draftCount > 0 && (
+        <section className="lb-card flex items-center gap-3 !bg-amber-soft">
+          <FlaskConical size={20} className="shrink-0 text-amber" />
+          <div className="min-w-0 flex-1">
+            <p className="font-display font-semibold text-ink">
+              {draftCount} {draftCount === 1 ? "movimiento borrador" : "movimientos borrador"}
+            </p>
+            <p className="text-meta text-ink-soft">Confirmalos cuando esta cuenta sea la definitiva de {monthLabel}.</p>
+          </div>
+          <button
+            type="button"
+            disabled={confirming || !month}
+            onClick={() => {
+              if (!month) return;
+              setConfirming(true);
+              const to = new Date(`${month}T12:00:00-03:00`);
+              const toStr = new Date(to.getFullYear(), to.getMonth() + 1, 0).toISOString().slice(0, 10);
+              confirmDraftMonth(month, toStr)
+                .then(() => router.refresh())
+                .finally(() => setConfirming(false));
+            }}
+            className="lb-btn shrink-0 !px-3 !py-2 text-sm disabled:opacity-50"
+          >
+            {confirming ? "Confirmando…" : "Confirmar mes"}
+          </button>
+        </section>
+      )}
+
       {/* Filtro por persona */}
       <div className="flex flex-wrap gap-2">
         <FilterChip active={filter === "all"} onClick={() => setFilter("all")} color="var(--color-familia)">
@@ -146,7 +202,10 @@ export function FinanceView({
 
       {/* Resumen */}
       <section className="lb-card">
-        <p className="text-label font-display uppercase text-ink-ghost">Saldo de {monthLabel}</p>
+        <p className="text-label font-display uppercase text-ink-ghost">
+          {isFuture ? "Saldo hipotético de" : "Saldo de"} {monthLabel}
+          {isPast && " · cerrado"}
+        </p>
         <p className={`text-display font-display font-bold ${balance < 0 ? "text-danger" : "text-ink"}`}>
           {formatARS(balance)}
         </p>
@@ -179,6 +238,10 @@ export function FinanceView({
         )}
       </section>
 
+      {month && (
+        <RecurringBills bills={bills} month={month} monthLabel={monthLabel} members={members} currentMemberId={currentMemberId} />
+      )}
+
       {/* Tabs */}
       <div className="flex rounded-md bg-line/60 p-1">
         {(["gastos", "ingresos", "ahorro", "topes"] as Tab[]).map((t) => (
@@ -209,7 +272,10 @@ export function FinanceView({
                 className="lb-card flex w-full items-center gap-3 !p-3 text-left"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-item font-medium text-ink">{ex.description}</p>
+                  <p className="flex items-center gap-1.5 text-item font-medium text-ink">
+                    {ex.description}
+                    {ex.is_draft && <span className="lb-chip !bg-info-soft !text-info">borrador</span>}
+                  </p>
                   <p className="text-meta text-ink-faint">
                     {relativeDayLabel(ex.spent_at)} · {EXPENSE_CATEGORIES[ex.category]}
                     {ex.is_fixed ? " · fijo" : ""}
@@ -239,7 +305,10 @@ export function FinanceView({
                 className="lb-card flex w-full items-center gap-3 !p-3 text-left"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-item font-medium text-ink">{inc.description}</p>
+                  <p className="flex items-center gap-1.5 text-item font-medium text-ink">
+                    {inc.description}
+                    {inc.is_draft && <span className="lb-chip !bg-info-soft !text-info">borrador</span>}
+                  </p>
                   <p className="text-meta text-ink-faint">
                     {relativeDayLabel(inc.received_at)} · {INCOME_SOURCES[inc.source]}
                     {inc.is_recurring ? " · mensual" : ""}

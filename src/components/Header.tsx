@@ -1,13 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { useTransition } from "react";
 import { Settings, Users } from "lucide-react";
+import { clearProfile } from "@/app/actions/session";
+import { useHousehold } from "@/components/HouseholdProvider";
+import { MemberAvatar } from "@/components/ui/MemberChip";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { me, members } = useHousehold();
+  const [pending, start] = useTransition();
 
   return (
     <div className="flex items-center justify-between px-4 pt-4">
@@ -38,6 +45,23 @@ export function Header() {
         >
           <Settings size={18} />
         </Link>
+        {/* Con más de un perfil en el hogar, tocar el avatar deja elegir otro (sin cerrar sesión). */}
+        {members.length > 1 && (
+          <button
+            type="button"
+            aria-label="Cambiar de perfil"
+            disabled={pending}
+            onClick={() =>
+              start(async () => {
+                await clearProfile();
+                router.push("/perfil");
+              })
+            }
+            className="ml-1 disabled:opacity-50"
+          >
+            <MemberAvatar member={me} size={30} />
+          </button>
+        )}
       </div>
     </div>
   );

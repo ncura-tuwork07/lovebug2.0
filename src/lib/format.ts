@@ -14,6 +14,12 @@ export function addDays(isoDate: string, days: number): string {
   return format(d, "yyyy-MM-dd");
 }
 
+// Primer día del mes, corrido n meses (n negativo = hacia atrás). Sirve para navegar meses.
+export function addMonths(isoDate: string, n: number): string {
+  const d = parseISO(isoDate);
+  return format(new Date(d.getFullYear(), d.getMonth() + n, 1), "yyyy-MM-dd");
+}
+
 export function monthRange(isoDate = todayAR()): { from: string; to: string } {
   const d = parseISO(isoDate);
   const from = format(new Date(d.getFullYear(), d.getMonth(), 1), "yyyy-MM-dd");

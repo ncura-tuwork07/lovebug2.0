@@ -128,6 +128,9 @@ export function SettingsView({
             </li>
           ))}
         </ul>
+        <p className="mt-2 text-meta text-ink-faint">
+          Los que no tienen cuenta usan este mismo login: al entrar eligen su perfil, como en Netflix. Agregalos sin invitar a nadie.
+        </p>
         <Link href="/familia" className="mt-3 inline-block text-sm font-semibold text-coral">
           Agregar integrantes →
         </Link>
@@ -136,10 +139,11 @@ export function SettingsView({
       {/* Invitación */}
       <section className="lb-card">
         <h2 className="text-h2 mb-1 flex items-center gap-2 font-display uppercase tracking-wide text-success">
-          <Share2 size={16} /> Invitar a alguien
+          <Share2 size={16} /> Invitar con su propio login
         </h2>
         <p className="mb-3 text-body text-ink-soft">
-          Quien entre con este link se suma al hogar y ve todo lo mismo que vos: pareja, familia, amigos o compañeros de casa. Compartilo solo con quien quieras adentro.
+          Para quien prefiera entrar con su propio email y contraseña (en vez de compartir el tuyo). Ve todo lo mismo que vos: pareja, familia,
+          amigos o compañeros de casa. Compartilo solo con quien quieras adentro.
         </p>
         <div className="rounded-md bg-field px-3 py-2">
           <p className="text-label font-bold uppercase tracking-wider text-ink-ghost">Código</p>
@@ -198,7 +202,12 @@ export function SettingsView({
           <BookHeart size={16} /> Inspiración de Hoy
         </h2>
         <p className="mb-3 text-body text-ink-soft">Qué lectura ven cada mañana (o ninguna) y si quieren horóscopo.</p>
-        <InspirationSetup compact current={traditionOf(household.settings)} horoscope={household.settings.inspiration?.horoscope !== false} />
+        <InspirationSetup
+          compact
+          current={traditionOf(household.settings)}
+          horoscope={household.settings.inspiration?.horoscope !== false}
+          otherLabel={household.settings.inspiration?.otherLabel ?? null}
+        />
       </section>
 
       <PushSetup />

@@ -1,22 +1,38 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Baby, Check, Home, Trash2, Users } from "lucide-react";
-import type { EventGuest, FamilyEvent, Member } from "@/lib/types";
-import { addGuestsBulk, addHouseholdAsGuests, deleteGuest, saveGuest } from "@/app/actions/familyEvents";
+import { Baby, Check, Contact as ContactIcon, Home, Trash2, Users } from "lucide-react";
+import type { Contact, EventGuest, FamilyEvent, Member } from "@/lib/types";
+import { addContactsAsGuests, addGuestsBulk, addHouseholdAsGuests, deleteGuest, saveGuest } from "@/app/actions/familyEvents";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Field, Input, SubmitRow, Textarea } from "@/components/ui/Field";
 import { fd, useSheet } from "@/components/ui/useSheet";
 import { formatPortion, guestPortion, menuKey } from "@/lib/events";
 import { AddButton, SectionTitle, useRun } from "./shared";
 
-export function EventGuests({ event, guests, members }: { event: FamilyEvent; guests: EventGuest[]; members: Member[] }) {
+export function EventGuests({
+  event,
+  guests,
+  members,
+  contacts = [],
+}: {
+  event: FamilyEvent;
+  guests: EventGuest[];
+  members: Member[];
+  contacts?: Contact[];
+}) {
   const sheet = useSheet<EventGuest>();
   const { busy, msg, run } = useRun();
   const [bulk, setBulk] = useState("");
+  const [circleOpen, setCircleOpen] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
   const confirmed = guests.filter((g) => g.confirmed);
   const kids = confirmed.filter((g) => g.is_child).length;
   const withNotes = guests.filter((g) => g.notes);
+  const alreadyGuestContactIds = new Set(guests.map((g) => g.contact_id).filter(Boolean));
+  const circleOptions = contacts.filter((c) => !alreadyGuestContactIds.has(c.id));
+  // Nueva persona = no viene de un integrante de casa ni ya está en el Círculo.
+  const isNewPerson = !sheet.editing?.member_id && !sheet.editing?.contact_id;
 
   function submitGuest(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -35,8 +51,19 @@ export function EventGuests({ event, guests, members }: { event: FamilyEvent; gu
         confirmed: f.bool("confirmed"),
         notes: f.opt("notes"),
         portions,
+        saveToCircle: isNewPerson && f.bool("save_to_circle"),
       })
     );
+  }
+
+  function submitCircle(e: FormEvent) {
+    e.preventDefault();
+    const ids = [...picked];
+    if (!ids.length) return;
+    run("circle", () => addContactsAsGuests(event.id, ids), "{n} del círculo sumados").then(() => {
+      setPicked(new Set());
+      setCircleOpen(false);
+    });
   }
 
   return (
@@ -66,14 +93,25 @@ export function EventGuests({ event, guests, members }: { event: FamilyEvent; gu
           Sumar
         </button>
       </form>
-      <button
-        type="button"
-        disabled={busy === "home"}
-        onClick={() => run("home", () => addHouseholdAsGuests(event.id), "{n} de casa sumados")}
-        className="mt-2 flex min-h-9 items-center gap-1.5 text-sm font-semibold text-coral disabled:opacity-50"
-      >
-        <Home size={14} /> Sumar a los de casa ({members.length})
-      </button>
+      <div className="mt-2 flex flex-wrap gap-3">
+        <button
+          type="button"
+          disabled={busy === "home"}
+          onClick={() => run("home", () => addHouseholdAsGuests(event.id), "{n} de casa sumados")}
+          className="flex min-h-9 items-center gap-1.5 text-sm font-semibold text-coral disabled:opacity-50"
+        >
+          <Home size={14} /> Sumar a los de casa ({members.length})
+        </button>
+        {circleOptions.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setCircleOpen(true)}
+            className="flex min-h-9 items-center gap-1.5 text-sm font-semibold text-coral"
+          >
+            <ContactIcon size={14} /> Sumar del Círculo ({circleOptions.length})
+          </button>
+        )}
+      </div>
       {msg && <p className="mt-1 text-sm text-ink-soft">{msg}</p>}
 
       {guests.length > 0 && (
@@ -130,6 +168,15 @@ export function EventGuests({ event, guests, members }: { event: FamilyEvent; gu
           <Field label="Notas (vegetariana, celíaco, viene con la novia…)">
             <Textarea name="notes" defaultValue={sheet.editing?.notes ?? ""} />
           </Field>
+          {isNewPerson && (
+            <label className="flex items-center gap-3 rounded-md bg-info-soft px-3 py-2.5">
+              <input type="checkbox" name="save_to_circle" defaultChecked className="h-5 w-5 accent-info" />
+              <span className="text-item text-ink">
+                Guardar en tu Círculo
+                <span className="block text-meta text-ink-faint">Para tenerla ya cargada la próxima vez. Si no, queda solo para este evento.</span>
+              </span>
+            </label>
+          )}
           {event.menu.length > 0 && (
             <Field label="Porciones especiales" hint="Dejá vacío para usar lo normal por adulto o peque.">
               <div className="flex flex-col gap-2">
@@ -156,6 +203,52 @@ export function EventGuests({ event, guests, members }: { event: FamilyEvent; gu
           )}
           {sheet.error && <p className="text-sm text-danger">{sheet.error}</p>}
           <SubmitRow saving={sheet.saving} />
+        </form>
+      </BottomSheet>
+
+      {/* Sheet: elegir del Círculo */}
+      <BottomSheet open={circleOpen} onClose={() => setCircleOpen(false)} title="Sumar del Círculo">
+        <form onSubmit={submitCircle} className="flex flex-col gap-4">
+          {circleOptions.length === 0 ? (
+            <p className="text-body text-ink-faint">Ya están todos los de tu Círculo invitados a este evento.</p>
+          ) : (
+            <ul className="flex max-h-[50vh] flex-col divide-y divide-line overflow-y-auto">
+              {circleOptions.map((c) => (
+                <li key={c.id}>
+                  <label className="flex min-h-12 items-center gap-3 py-1">
+                    <input
+                      type="checkbox"
+                      checked={picked.has(c.id)}
+                      onChange={(e) =>
+                        setPicked((prev) => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(c.id);
+                          else next.delete(c.id);
+                          return next;
+                        })
+                      }
+                      className="h-5 w-5 accent-coral"
+                    />
+                    {c.photo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={c.photo_url} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                    ) : (
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-info-soft text-sm font-bold text-info">
+                        {c.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-item text-ink">{c.name}</span>
+                      {c.relationship && <span className="block truncate text-meta text-ink-faint">{c.relationship}</span>}
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button type="submit" disabled={busy === "circle" || picked.size === 0} className="lb-btn disabled:opacity-50">
+            {busy === "circle" ? "Sumando…" : `Sumar ${picked.size || ""}`.trim()}
+          </button>
         </form>
       </BottomSheet>
     </section>

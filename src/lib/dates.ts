@@ -1,16 +1,17 @@
-import type { ImportantDate, Member } from "@/lib/types";
+import type { Contact, ImportantDate, Member } from "@/lib/types";
 
 export type Upcoming = {
   id: string;
   title: string;
   kind: "cumple" | "aniversario" | "otro";
   member_id: string | null;
+  contact_id: string | null;
   next: string; // YYYY-MM-DD de la próxima ocurrencia
   daysUntil: number;
   turns: number | null; // años que cumple, si se conoce el año
   remind_days_before: number;
   gift_ideas: string | null;
-  source: "date" | "member";
+  source: "date" | "member" | "contact";
 };
 
 function pad(n: number) {
@@ -29,8 +30,8 @@ function nextOccurrence(today: string, month: number, day: number): string {
   return candidate >= today ? candidate : `${y + 1}-${pad(month)}-${pad(day)}`;
 }
 
-// Combina fechas cargadas + cumpleaños de los integrantes, ordenadas por cercanía.
-export function upcomingDates(today: string, dates: ImportantDate[], members: Member[]): Upcoming[] {
+// Combina fechas cargadas + cumpleaños de los integrantes y del Círculo, ordenadas por cercanía.
+export function upcomingDates(today: string, dates: ImportantDate[], members: Member[], contacts: Contact[] = []): Upcoming[] {
   const list: Upcoming[] = [];
 
   for (const d of dates) {
@@ -40,6 +41,7 @@ export function upcomingDates(today: string, dates: ImportantDate[], members: Me
       title: d.title,
       kind: d.kind,
       member_id: d.member_id,
+      contact_id: null,
       next,
       daysUntil: daysBetween(today, next),
       turns: d.year ? +next.slice(0, 4) - d.year : null,
@@ -59,12 +61,33 @@ export function upcomingDates(today: string, dates: ImportantDate[], members: Me
       title: `Cumple de ${m.name}`,
       kind: "cumple",
       member_id: m.id,
+      contact_id: null,
       next,
       daysUntil: daysBetween(today, next),
       turns: +next.slice(0, 4) - +m.birthday.slice(0, 4),
       remind_days_before: 7,
       gift_ideas: null,
       source: "member",
+    });
+  }
+
+  for (const c of contacts) {
+    if (!c.birthday) continue;
+    const month = +c.birthday.slice(5, 7);
+    const day = +c.birthday.slice(8, 10);
+    const next = nextOccurrence(today, month, day);
+    list.push({
+      id: `contact-${c.id}`,
+      title: `Cumple de ${c.name}`,
+      kind: "cumple",
+      member_id: null,
+      contact_id: c.id,
+      next,
+      daysUntil: daysBetween(today, next),
+      turns: +next.slice(0, 4) - +c.birthday.slice(0, 4),
+      remind_days_before: 7,
+      gift_ideas: null,
+      source: "contact",
     });
   }
 

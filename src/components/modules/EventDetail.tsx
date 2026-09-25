@@ -4,7 +4,7 @@ import { type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Circle, ListChecks, ShoppingCart } from "lucide-react";
-import type { EventGuest, EventItem, FamilyEvent, Member, PantryItem, Recipe, ShoppingItem, Task } from "@/lib/types";
+import type { Contact, EventGuest, EventItem, FamilyEvent, Member, PantryItem, Recipe, ShoppingItem, Task } from "@/lib/types";
 import { addEventTask, deleteFamilyEvent, saveFamilyEvent, setEventStatus } from "@/app/actions/familyEvents";
 import { toggleTask } from "@/app/actions/tasks";
 import { toggleShoppingItem } from "@/app/actions/shopping";
@@ -25,6 +25,7 @@ import { AddButton, SectionTitle, useRun } from "./event/shared";
 export function EventDetail({
   event,
   guests,
+  contacts,
   items,
   photos,
   recipes,
@@ -38,6 +39,7 @@ export function EventDetail({
 }: {
   event: FamilyEvent;
   guests: EventGuest[];
+  contacts: Contact[];
   items: EventItem[];
   photos: AttachmentWithUrl[];
   recipes: Recipe[];
@@ -124,7 +126,7 @@ export function EventDetail({
 
       {isPast && <EventMemories event={event} photos={photos} householdId={householdId} />}
 
-      <EventGuests event={event} guests={guests} members={members} />
+      <EventGuests event={event} guests={guests} members={members} contacts={contacts} />
       <EventMenu event={event} guests={guests} recipes={recipes} pantry={pantry} currentMemberId={currentMemberId} />
       <EventExtras event={event} items={items} currentMemberId={currentMemberId} />
 

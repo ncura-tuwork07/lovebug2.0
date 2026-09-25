@@ -24,7 +24,8 @@ export async function DailyInspiration({ members, settings }: { members: Member[
     .map((m) => ({ member: m, sign: zodiacFor(m.birthday) }))
     .filter((x) => x.sign);
 
-  const accent = insp.tradition === "ninguna" ? "text-info" : "text-coral";
+  const accent = insp.tradition === "ninguna" || insp.tradition === "otra" ? "text-info" : "text-coral";
+  const otherLabel = settings?.inspiration?.otherLabel;
 
   return (
     <section className="flex flex-col gap-4">
@@ -36,6 +37,14 @@ export async function DailyInspiration({ members, settings }: { members: Member[
         {insp.text && <ExpandableText text={`“${insp.text}”`} limit={300} className="font-accent text-2xl leading-tight text-ink" />}
         {insp.reference && <p className={`mt-1 text-meta font-semibold ${accent}`}>{insp.reference}</p>}
         {insp.reflection && <p className="mt-3 text-body text-ink-soft">{insp.reflection}</p>}
+        {insp.tradition === "otra" && otherLabel && (
+          <p className="mt-3 rounded-md bg-info-soft px-3 py-2 text-meta text-ink-soft">
+            Pediste contenido de <b>{otherLabel}</b> — todavía no lo tenemos armado, pero quedó anotado. Mientras tanto ves esto.{" "}
+            <Link href="/ajustes" className="font-semibold text-info">
+              Cambiar
+            </Link>
+          </p>
+        )}
       </div>
 
       {insp.shabbat && (insp.shabbat.candles || insp.shabbat.havdalah) && (

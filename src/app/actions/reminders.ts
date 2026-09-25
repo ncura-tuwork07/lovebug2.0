@@ -19,6 +19,7 @@ export type ReminderInput = {
   member_id: string | null;
   notify_days_before: number;
   repeat: "none" | "monthly" | "yearly";
+  repeat_until: string | null;
   notes: string | null;
 };
 
@@ -33,6 +34,7 @@ export async function saveReminder(input: ReminderInput) {
     member_id: input.member_id || null,
     notify_days_before: Math.max(0, Math.min(60, Number(input.notify_days_before) || 0)),
     repeat: input.repeat,
+    repeat_until: input.repeat === "none" ? null : input.repeat_until || null,
     notes: input.notes?.trim() || null,
   };
   if (!row.title) throw new Error("Falta el título.");

@@ -47,8 +47,10 @@ export function AddButton({ onClick, label }: { onClick: () => void; label: stri
 }
 
 // Sube un archivo del evento al bucket privado, dentro de la carpeta del hogar.
-export async function uploadEventFile(householdId: string, eventId: string, prefix: string, file: File): Promise<string> {
-  if (file.size > 15 * 1024 * 1024) throw new Error("El archivo es muy pesado (máximo 15 MB).");
+// Los videos pesan más que una foto o un ticket, así que se les da más margen.
+export async function uploadEventFile(householdId: string, eventId: string, prefix: string, file: File, maxBytes?: number): Promise<string> {
+  const limit = maxBytes ?? (file.type.startsWith("video/") ? 60 : 15) * 1024 * 1024;
+  if (file.size > limit) throw new Error(`El archivo es muy pesado (máximo ${Math.round(limit / (1024 * 1024))} MB).`);
   const supabase = createClient();
   const safe = file.name.replace(/[^\w.\-]+/g, "_").slice(-60);
   const path = `${householdId}/eventos/${eventId}/${prefix}-${Date.now()}-${safe}`;

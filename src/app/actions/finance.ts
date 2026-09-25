@@ -26,6 +26,7 @@ export type ExpenseInput = {
   spent_at: string;
   is_fixed: boolean;
   event_id?: string | null;
+  is_draft?: boolean;
 };
 
 export async function saveExpense(input: ExpenseInput) {
@@ -38,6 +39,7 @@ export async function saveExpense(input: ExpenseInput) {
     spent_at: input.spent_at,
     is_fixed: input.is_fixed,
     event_id: input.event_id || null,
+    is_draft: input.is_draft ?? false,
   };
   if (!row.description) throw new Error("Falta la descripción.");
   const { error } = input.id
@@ -63,6 +65,7 @@ export type IncomeInput = {
   member_id: string | null;
   received_at: string;
   is_recurring: boolean;
+  is_draft?: boolean;
 };
 
 export async function saveIncome(input: IncomeInput) {
@@ -74,6 +77,7 @@ export async function saveIncome(input: IncomeInput) {
     member_id: input.member_id || null,
     received_at: input.received_at,
     is_recurring: input.is_recurring,
+    is_draft: input.is_draft ?? false,
   };
   if (!row.description) throw new Error("Falta la descripción.");
   const { error } = input.id
@@ -87,6 +91,19 @@ export async function deleteIncome(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("incomes").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  revalidate();
+}
+
+// "Modo borrador": convierte en reales todos los ingresos y gastos hipotéticos de un mes
+// (queda como la cuenta definitiva de ese mes, sin borrar el borrador).
+export async function confirmDraftMonth(from: string, to: string): Promise<void> {
+  const supabase = await createClient();
+  const [{ error: e1 }, { error: e2 }] = await Promise.all([
+    supabase.from("expenses").update({ is_draft: false }).eq("is_draft", true).gte("spent_at", from).lte("spent_at", to),
+    supabase.from("incomes").update({ is_draft: false }).eq("is_draft", true).gte("received_at", from).lte("received_at", to),
+  ]);
+  if (e1) throw new Error(e1.message);
+  if (e2) throw new Error(e2.message);
   revalidate();
 }
 

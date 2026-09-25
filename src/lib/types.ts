@@ -78,6 +78,7 @@ export type Reminder = {
   member_id: string | null;
   notify_days_before: number;
   repeat: "none" | "monthly" | "yearly";
+  repeat_until: string | null; // último mes en que aparece; vacío = para siempre
   done: boolean;
   notes: string | null;
 };
@@ -187,6 +188,7 @@ export type Expense = {
   is_fixed: boolean;
   event_id: string | null;
   receipt_path: string | null;
+  is_draft: boolean; // "modo borrador": hipótesis para un mes futuro, no cuenta como real
 };
 
 export type IncomeSource = "sueldo" | "freelance" | "proyecto" | "anses" | "otro";
@@ -199,6 +201,21 @@ export type Income = {
   member_id: string | null;
   received_at: string;
   is_recurring: boolean;
+  is_draft: boolean;
+};
+
+// ── Cuentas recurrentes: estado por mes calendario ────────
+export type BillCycleStatus = "pendiente" | "pausada" | "pagada";
+
+export type BillCycle = {
+  id: string;
+  reminder_id: string;
+  month: string; // primer día del mes: "2026-10-01"
+  status: BillCycleStatus;
+  amount: number | null;
+  expense_id: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type SavingsGoal = {
@@ -274,11 +291,28 @@ export type EventGuest = {
   event_id: string;
   name: string;
   member_id: string | null;
+  contact_id: string | null; // vínculo con el Círculo (gente fuera del hogar)
   is_child: boolean;
   confirmed: boolean;
   notes: string | null;
   portions: Record<string, number>; // key del plato → cantidad especial
   sort_order: number;
+  created_at: string;
+};
+
+// ── Círculo: familiares y amigos fuera del hogar ─────────
+export type Contact = {
+  id: string;
+  household_id: string;
+  name: string;
+  relationship: string | null;
+  photo_url: string | null;
+  birthday: string | null;
+  phone: string | null;
+  email: string | null;
+  notes: string | null;
+  is_child: boolean;
+  archived_at: string | null;
   created_at: string;
 };
 
@@ -297,14 +331,28 @@ export type EventItem = {
   created_at: string;
 };
 
+export type AttachmentKind = "foto" | "video" | "audio" | "ticket" | "archivo";
+
 export type EventAttachment = {
   id: string;
   event_id: string;
-  kind: "foto" | "ticket";
+  kind: AttachmentKind;
   title: string | null;
   file_path: string;
   mime_type: string | null;
+  size_bytes: number | null;
+  duration_seconds: number | null;
   created_at: string;
+};
+
+// ── Passkeys (huella / cara / PIN del celu) ──────────────
+export type UserPasskey = {
+  id: string;
+  user_id: string;
+  device_label: string | null;
+  transports: string[] | null;
+  created_at: string;
+  last_used_at: string | null;
 };
 
 export type FamilyEvent = {
@@ -323,14 +371,26 @@ export type FamilyEvent = {
 };
 
 // ── Hogares (multi-familia) ──────────────────────────────
-export type Tradition = "catolica" | "cristiana" | "judia" | "ninguna";
+export type Tradition = "catolica" | "cristiana" | "judia" | "ninguna" | "otra";
 export type HouseholdSettings = {
   modules?: Record<string, boolean>; // clave del módulo → activado (por defecto todos)
   inspiration?: {
     tradition?: Tradition; // qué lectura espiritual ver en Hoy (sin elegir → se pregunta la primera vez)
     horoscope?: boolean;
     gospel?: boolean; // legado: false equivale a tradition "ninguna"
+    otherLabel?: string; // cuando tradition es "otra": qué religión pidieron (para mostrarlo en Hoy)
   };
+  biometrics?: { enabled?: boolean }; // recordatorio de "activar huella" ya visto
+};
+
+export type TraditionRequest = {
+  id: string;
+  household_id: string | null;
+  user_id: string | null;
+  label: string;
+  note: string | null;
+  status: "nuevo" | "en_curso" | "listo" | "descartado";
+  created_at: string;
 };
 
 export type Household = {

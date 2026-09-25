@@ -1,7 +1,13 @@
 import { cache } from "react";
+import { cookies } from "next/headers";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import type { Household, Member } from "@/lib/types";
+import type { Contact, Household, Member } from "@/lib/types";
+
+// Cookie del "¿Quién sos?" (estilo Netflix): un mismo login puede representar a todo el hogar,
+// y cada quien elige su perfil. No es un límite de seguridad (todo el hogar ve lo mismo por RLS);
+// solo decide de quién son las cosas por defecto y el saludo de "Hoy".
+export const PROFILE_COOKIE = "lb_profile";
 
 export async function getMembers(): Promise<Member[]> {
   const supabase = await createClient();
@@ -9,13 +15,31 @@ export async function getMembers(): Promise<Member[]> {
   return (data ?? []) as Member[];
 }
 
+// Círculo: familiares y amigos fuera del hogar (para eventos, cumples y sugerencias).
+export async function getContacts(includeArchived = false): Promise<Contact[]> {
+  const supabase = await createClient();
+  let q = supabase.from("contacts").select("*").order("name");
+  if (!includeArchived) q = q.is("archived_at", null);
+  const { data } = await q;
+  return (data ?? []) as Contact[];
+}
+
+// Perfil activo de esta sesión: el elegido en el selector de perfiles (cookie), guardado por
+// dispositivo. Si el hogar tiene un solo perfil, no hay nada que elegir. Si tiene varios y este
+// dispositivo todavía no eligió, no hay "yo" y el layout manda al selector — así entra cualquiera
+// que use el mismo login (como en Netflix), sin asumir que sos el dueño de la cuenta.
 export async function getCurrentMember(members: Member[]): Promise<Member | null> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  return members.find((m) => m.user_id === user.id) ?? null;
+  const store = await cookies();
+  const activeId = store.get(PROFILE_COOKIE)?.value;
+  const active = activeId ? members.find((m) => m.id === activeId) : undefined;
+  if (active) return active;
+  if (members.length <= 1) return members[0] ?? null;
+  return null;
 }
 
 // Hogar del usuario logueado (RLS ya limita a ese único hogar).
@@ -41,5 +65,6 @@ export const getSessionContext = cache(async (): Promise<SessionContext> => {
   } = await supabase.auth.getUser();
   if (!user) return { user: null, members: [], me: null, household: null };
   const [members, household] = await Promise.all([getMembers(), getHousehold()]);
-  return { user, members, me: members.find((m) => m.user_id === user.id) ?? null, household };
+  const me = await getCurrentMember(members);
+  return { user, members, me, household };
 });

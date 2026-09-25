@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { BellRing, Cake, CheckCircle2, Circle, Gift, Heart, Star } from "lucide-react";
-import type { ImportantDate, Member, Reminder, ReminderCategory } from "@/lib/types";
+import type { Contact, ImportantDate, Member, Reminder, ReminderCategory } from "@/lib/types";
 import {
   completeReminder,
   deleteImportantDate,
@@ -37,11 +37,13 @@ export function RemindersView({
   reminders,
   dates,
   members,
+  contacts = [],
   currentMemberId,
 }: {
   reminders: Reminder[];
   dates: ImportantDate[];
   members: Member[];
+  contacts?: Contact[];
   currentMemberId: string | null;
 }) {
   const router = useRouter();
@@ -51,7 +53,7 @@ export function RemindersView({
   const dateSheet = useSheet<Upcoming>();
   const today = todayAR();
 
-  const upcoming = upcomingDates(today, dates, members);
+  const upcoming = upcomingDates(today, dates, members, contacts);
 
   function submitReminder(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -66,6 +68,7 @@ export function RemindersView({
         member_id: f.opt("member_id"),
         notify_days_before: f.num("notify_days_before"),
         repeat: f.str("repeat") as "none" | "monthly" | "yearly",
+        repeat_until: f.opt("repeat_until"),
         notes: f.opt("notes"),
       })
     );
@@ -143,6 +146,7 @@ export function RemindersView({
                     <p className="text-meta text-ink-faint">
                       {REMINDER_CATEGORIES[r.category]} · {formatDay(r.due_date, "d MMM")}
                       {r.repeat !== "none" ? (r.repeat === "monthly" ? " · mensual" : " · anual") : ""}
+                      {r.repeat_until ? ` hasta ${formatDay(r.repeat_until, "MMM yyyy")}` : ""}
                     </p>
                   </button>
                   <div className="flex shrink-0 flex-col items-end gap-1">
@@ -247,6 +251,9 @@ export function RemindersView({
               </Select>
             </Field>
           </div>
+          <Field label="Hasta cuándo (opcional)" hint="Solo si se repite. Ej. el alquiler hasta junio del año que viene. Vacío = para siempre.">
+            <Input name="repeat_until" type="date" defaultValue={remSheet.editing?.repeat_until ?? ""} />
+          </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Avisar con">
               <Select name="notify_days_before" defaultValue={String(remSheet.editing?.notify_days_before ?? 3)}>

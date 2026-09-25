@@ -68,9 +68,10 @@ export async function getInspiration(tradition: Tradition, day: string): Promise
     };
   }
 
+  // "ninguna" y "otra" (mientras no tengamos esa religión) comparten el mismo banco laico.
   const th = thoughtForDay(doy);
   return {
-    tradition: "ninguna",
+    tradition,
     heading: "Pensamiento del día",
     kicker: null,
     text: th.text,

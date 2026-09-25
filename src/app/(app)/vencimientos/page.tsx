@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentMember, getMembers } from "@/lib/data";
+import { getContacts, getCurrentMember, getMembers } from "@/lib/data";
 import type { ImportantDate, Reminder } from "@/lib/types";
 import { RemindersView } from "@/components/modules/RemindersView";
 
@@ -7,10 +7,11 @@ export const dynamic = "force-dynamic";
 
 export default async function VencimientosPage() {
   const supabase = await createClient();
-  const [members, remRes, datesRes] = await Promise.all([
+  const [members, remRes, datesRes, contacts] = await Promise.all([
     getMembers(),
     supabase.from("reminders").select("*").order("due_date"),
     supabase.from("important_dates").select("*"),
+    getContacts(),
   ]);
   const me = await getCurrentMember(members);
 
@@ -26,6 +27,7 @@ export default async function VencimientosPage() {
         reminders={(remRes.data ?? []) as Reminder[]}
         dates={(datesRes.data ?? []) as ImportantDate[]}
         members={members}
+        contacts={contacts}
         currentMemberId={me?.id ?? null}
       />
     </div>
