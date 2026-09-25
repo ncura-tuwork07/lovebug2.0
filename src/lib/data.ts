@@ -2,7 +2,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import type { Contact, Household, Member } from "@/lib/types";
+import type { Contact, Household, Member, UserPasskey } from "@/lib/types";
 
 // Cookie del "¿Quién sos?" (estilo Netflix): un mismo login puede representar a todo el hogar,
 // y cada quien elige su perfil. No es un límite de seguridad (todo el hogar ve lo mismo por RLS);
@@ -22,6 +22,16 @@ export async function getContacts(includeArchived = false): Promise<Contact[]> {
   if (!includeArchived) q = q.is("archived_at", null);
   const { data } = await q;
   return (data ?? []) as Contact[];
+}
+
+// Passkeys del login (huella/cara/PIN): son de la cuenta compartida, no de un integrante puntual.
+export async function getPasskeys(): Promise<UserPasskey[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("user_passkeys")
+    .select("id, user_id, device_label, transports, created_at, last_used_at")
+    .order("created_at");
+  return (data ?? []) as UserPasskey[];
 }
 
 // Perfil activo de esta sesión: el elegido en el selector de perfiles (cookie), guardado por

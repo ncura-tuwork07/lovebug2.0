@@ -10,9 +10,10 @@ import { InspirationSetup } from "@/components/InspirationSetup";
 import { traditionOf } from "@/lib/traditions";
 import { MODULES, isModuleEnabled } from "@/lib/modules";
 import { inviteLink } from "@/lib/app";
-import type { Household, Member } from "@/lib/types";
+import type { Household, Member, UserPasskey } from "@/lib/types";
 import { MemberAvatar } from "@/components/ui/MemberChip";
 import { PushSetup } from "@/components/PushSetup";
+import { PasskeysSection } from "@/components/settings/PasskeysSection";
 
 function Switch({ checked, onChange, disabled, label }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; label: string }) {
   return (
@@ -36,12 +37,14 @@ export function SettingsView({
   me,
   email,
   isAdmin,
+  passkeys,
 }: {
   household: Household;
   members: Member[];
   me: Member;
   email: string;
   isAdmin: boolean;
+  passkeys: UserPasskey[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -224,6 +227,8 @@ export function SettingsView({
           <ChevronRight size={16} className="text-ink-ghost" />
         </Link>
       )}
+
+      <PasskeysSection passkeys={passkeys} />
 
       {/* Cuenta */}
       <section className="lb-card">

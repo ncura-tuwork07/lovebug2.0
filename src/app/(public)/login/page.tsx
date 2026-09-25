@@ -4,6 +4,7 @@ import { Suspense, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AuthInput, AuthLink, AuthShell } from "@/components/auth/AuthShell";
+import { PasskeyLoginButton } from "@/components/auth/PasskeyLoginButton";
 
 function LoginForm() {
   const router = useRouter();
@@ -59,6 +60,10 @@ function LoginForm() {
           {loading ? "Entrando..." : "Entrar"}
         </button>
       </form>
+      <div className="my-3 flex items-center gap-2 text-xs text-white/40">
+        <span className="h-px flex-1 bg-white/15" />o<span className="h-px flex-1 bg-white/15" />
+      </div>
+      <PasskeyLoginButton next={next} onError={setError} />
     </AuthShell>
   );
 }
