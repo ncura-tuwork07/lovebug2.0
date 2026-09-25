@@ -11,6 +11,7 @@ import { TasksList } from "@/components/modules/TasksList";
 import { TripsList } from "@/components/modules/TripsList";
 import { EventsList } from "@/components/modules/EventsList";
 import { DailyInspiration } from "@/components/DailyInspiration";
+import { Contale } from "@/components/assistant/Contale";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,8 @@ export default async function HoyPage() {
         <p className="text-sm text-amber">{me ? `Buen día, ${me.nickname ?? me.name} ☀️` : "Hoy es"}</p>
         <h1 className="text-display font-display font-bold capitalize text-ink">{heading}</h1>
       </header>
+
+      {process.env.ANTHROPIC_API_KEY && <Contale members={members} today={today} />}
 
       {/* Accesos rápidos */}
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">

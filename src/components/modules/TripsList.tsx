@@ -105,6 +105,7 @@ export function TripsList({
               </span>
             )}
           </p>
+          {trip.notes && <p className="mt-0.5 text-meta text-ink-soft">{trip.notes}</p>}
         </button>
         <div className="flex shrink-0 flex-col items-end gap-1">
           {(trip.departure_time || trip.arrival_time) && (
