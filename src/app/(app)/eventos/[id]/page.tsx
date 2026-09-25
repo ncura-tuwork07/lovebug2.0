@@ -3,15 +3,16 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getContacts, getSessionContext } from "@/lib/data";
-import type { EventAttachment, EventGuest, EventItem, Expense, FamilyEvent, PantryItem, Recipe, ShoppingItem, Task } from "@/lib/types";
+import type { EventAttachment, EventGuest, EventItem, EventSplit, Expense, FamilyEvent, PantryItem, Recipe, ShoppingItem, Task } from "@/lib/types";
 import { EventDetail } from "@/components/modules/EventDetail";
+import type { ShareWithGuest } from "@/components/modules/event/EventSplit";
 
 export const dynamic = "force-dynamic";
 
 export default async function EventoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: event }, { members, me, household }, contacts, recipesRes, pantryRes, shopRes, tasksRes, expRes, guestsRes, itemsRes, photosRes] =
+  const [{ data: event }, { members, me, household }, contacts, recipesRes, pantryRes, shopRes, tasksRes, expRes, guestsRes, itemsRes, photosRes, splitRes] =
     await Promise.all([
       supabase.from("family_events").select("*").eq("id", id).maybeSingle(),
       getSessionContext(),
@@ -24,8 +25,15 @@ export default async function EventoPage({ params }: { params: Promise<{ id: str
       supabase.from("event_guests").select("*").eq("event_id", id).order("sort_order").order("created_at"),
       supabase.from("event_items").select("*").eq("event_id", id).order("done").order("created_at"),
       supabase.from("event_attachments").select("*").eq("event_id", id).in("kind", ["foto", "video", "audio"]).order("created_at"),
+      // La división del evento, con cada parte y su invitado (para el nombre) en la misma consulta.
+      supabase.from("event_splits").select("*, event_split_shares(*, event_guests(*))").eq("event_id", id).maybeSingle(),
     ]);
   if (!event || !household) notFound();
+
+  type SplitRow = EventSplit & { event_split_shares: (ShareWithGuest & { event_guests: EventGuest })[] };
+  const splitRow = splitRes.data as SplitRow | null;
+  const split = splitRow ? ({ ...splitRow, event_split_shares: undefined } as EventSplit) : null;
+  const shares: ShareWithGuest[] = (splitRow?.event_split_shares ?? []).map((s) => ({ ...s, guest: s.event_guests }));
 
   // URLs firmadas (bucket privado) para tickets y fotos, válidas por una hora.
   const expenses = (expRes.data ?? []) as Expense[];
@@ -53,6 +61,8 @@ export default async function EventoPage({ params }: { params: Promise<{ id: str
         shopping={(shopRes.data ?? []) as ShoppingItem[]}
         tasks={(tasksRes.data ?? []) as Task[]}
         expenses={expenses.map((e) => ({ ...e, receipt_url: e.receipt_path ? signed.get(e.receipt_path) ?? null : null }))}
+        split={split}
+        shares={shares}
         members={members}
         currentMemberId={me?.id ?? null}
         householdId={household.id}

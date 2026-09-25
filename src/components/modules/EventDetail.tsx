@@ -4,7 +4,7 @@ import { type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Circle, ListChecks, ShoppingCart } from "lucide-react";
-import type { Contact, EventGuest, EventItem, FamilyEvent, Member, PantryItem, Recipe, ShoppingItem, Task } from "@/lib/types";
+import type { Contact, EventGuest, EventItem, EventSplit as EventSplitType, FamilyEvent, Member, PantryItem, Recipe, ShoppingItem, Task } from "@/lib/types";
 import { addEventTask, deleteFamilyEvent, saveFamilyEvent, setEventStatus } from "@/app/actions/familyEvents";
 import { toggleTask } from "@/app/actions/tasks";
 import { toggleShoppingItem } from "@/app/actions/shopping";
@@ -19,6 +19,7 @@ import { EventGuests } from "./event/EventGuests";
 import { EventMenu } from "./event/EventMenu";
 import { EventExtras } from "./event/EventExtras";
 import { EventBudget, type ExpenseWithReceipt } from "./event/EventBudget";
+import { EventSplit, type ShareWithGuest } from "./event/EventSplit";
 import { EventMemories, type AttachmentWithUrl } from "./event/EventMemories";
 import { AddButton, SectionTitle, useRun } from "./event/shared";
 
@@ -33,6 +34,8 @@ export function EventDetail({
   shopping,
   tasks,
   expenses,
+  split,
+  shares,
   members,
   currentMemberId,
   householdId,
@@ -47,6 +50,8 @@ export function EventDetail({
   shopping: ShoppingItem[];
   tasks: Task[];
   expenses: ExpenseWithReceipt[];
+  split: EventSplitType | null;
+  shares: ShareWithGuest[];
   members: Member[];
   currentMemberId: string | null;
   householdId: string;
@@ -60,6 +65,7 @@ export function EventDetail({
   const isPast = event.status === "done" || days < 0;
   const people = confirmedCount(event, guests);
   const estimatedExtras = items.reduce((s, i) => s + Number(i.estimated_cost ?? 0), 0);
+  const totalSpent = expenses.reduce((s, e) => s + Number(e.amount), 0);
 
   function submitEdit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -156,6 +162,7 @@ export function EventDetail({
       )}
 
       <EventBudget event={event} expenses={expenses} estimatedExtras={estimatedExtras} members={members} currentMemberId={currentMemberId} householdId={householdId} />
+      <EventSplit event={event} split={split} shares={shares} guests={guests} members={members} spent={totalSpent} currentMemberId={currentMemberId} />
 
       {/* Tareas */}
       <section className="lb-card">
