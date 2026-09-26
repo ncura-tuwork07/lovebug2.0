@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { MailCheck } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient as createPlainClient } from "@supabase/supabase-js";
 import { AuthInput, AuthLink, AuthShell } from "@/components/auth/AuthShell";
 
 export default function RestablecerPage() {
@@ -15,12 +15,22 @@ export default function RestablecerPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { error } = await createClient().auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/auth/callback?next=/restablecer/nueva`,
+    // Flujo "implicit" (no PKCE): el link del email trae la sesión en la dirección y funciona en
+    // cualquier navegador o celu. Con PKCE solo andaba en el mismo navegador que lo pidió (y el
+    // email suele abrirse en otro: Gmail, Chrome, Safari, o fuera de la app de Android).
+    const supabase = createPlainClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      auth: { flowType: "implicit", persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/restablecer/nueva`,
     });
     setLoading(false);
     if (error) {
-      setError("No pudimos mandar el email. Revisá la dirección y probá de nuevo.");
+      setError(
+        /rate|limit|seconds/i.test(error.message)
+          ? "Ya te mandamos un email hace un ratito. Esperá unos minutos y revisá también en spam."
+          : "No pudimos mandar el email. Revisá la dirección y probá de nuevo."
+      );
       return;
     }
     setSent(true);

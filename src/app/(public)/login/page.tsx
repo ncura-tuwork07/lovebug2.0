@@ -12,7 +12,9 @@ function LoginForm() {
   const next = params.get("next") || "/";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    params.get("error") === "link" ? "El link del email venció o ya se usó. Pedí uno nuevo desde “¿Olvidaste tu contraseña?”." : null
+  );
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
