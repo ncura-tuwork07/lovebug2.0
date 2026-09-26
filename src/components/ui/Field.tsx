@@ -142,7 +142,7 @@ export function RolePicker({
             {o}
           </option>
         ))}
-        <option value={OTHER}>Otro (lo escribo)</option>
+        <option value={OTHER}>Otro</option>
       </Select>
       {choice === OTHER && (
         <Input
@@ -150,7 +150,7 @@ export function RolePicker({
           required={required}
           autoFocus={!custom}
           maxLength={30}
-          placeholder="Escribilo acá"
+          placeholder="¿Cuál? Escribilo acá"
           onChange={(e) => {
             setCustom(e.target.value);
             onChange?.(e.target.value.trim());

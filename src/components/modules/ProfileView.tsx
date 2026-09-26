@@ -193,7 +193,7 @@ export function ProfileView({
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Qué es en la familia">
+          <Field label="Rol" hint="Si no está en la lista, elegí “Otro” y escribilo.">
             <RolePicker name="role" options={ROLE_SUGGESTIONS} defaultValue={shownRole(member.role)} required />
           </Field>
           <Field label="Cumpleaños">

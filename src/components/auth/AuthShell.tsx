@@ -41,5 +41,5 @@ export function AuthLink({ href, children }: { href: string; children: ReactNode
 }
 
 export function RoleInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return <RolePicker options={ROLE_SUGGESTIONS} defaultValue={value} onChange={onChange} placeholder="Tu rol en la familia (Mamá, Papá, Pareja…)" ariaLabel="Tu rol en la familia" />;
+  return <RolePicker options={ROLE_SUGGESTIONS} defaultValue={value} onChange={onChange} placeholder="Tu rol (Mamá, Papá, Pareja, Amigo…)" ariaLabel="Tu rol" />;
 }
