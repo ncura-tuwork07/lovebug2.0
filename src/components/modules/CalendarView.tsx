@@ -5,6 +5,7 @@ import type { CalendarEvent, ImportantDate, Member } from "@/lib/types";
 import type { Upcoming } from "@/lib/dates";
 import { EventsList, type AgendaExtra } from "@/components/modules/EventsList";
 import { ImportantDates } from "@/components/modules/ImportantDates";
+import { CalendarSubscribe } from "@/components/modules/CalendarSubscribe";
 
 export type CalendarTab = "agenda" | "fechas";
 
@@ -54,6 +55,8 @@ export function CalendarView({
       ) : (
         <ImportantDates upcoming={upcoming} dates={dates} members={members} />
       )}
+
+      <CalendarSubscribe />
     </div>
   );
 }

@@ -15,6 +15,7 @@ import { MemberAvatar } from "@/components/ui/MemberChip";
 import { PushSetup } from "@/components/PushSetup";
 import { PasskeysSection } from "@/components/settings/PasskeysSection";
 import { AndroidAppCard } from "@/components/settings/AndroidAppCard";
+import { CalendarSubscribe } from "@/components/modules/CalendarSubscribe";
 
 function Switch({ checked, onChange, disabled, label }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; label: string }) {
   return (
@@ -236,6 +237,8 @@ export function SettingsView({
       </div>
 
       <AndroidAppCard />
+
+      <CalendarSubscribe />
 
       {/* Cuenta */}
       <section className="lb-card">

@@ -404,6 +404,7 @@ export type HouseholdSettings = {
     otherLabel?: string; // cuando tradition es "otra": qué religión pidieron (para mostrarlo en Hoy)
   };
   biometrics?: { enabled?: boolean }; // recordatorio de "activar huella" ya visto
+  calendarFeed?: { version: number }; // suscripción al calendario: subirla invalida el link anterior
 };
 
 export type TraditionRequest = {
