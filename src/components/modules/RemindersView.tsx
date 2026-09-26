@@ -166,7 +166,7 @@ export function RemindersView({
             <Textarea name="notes" defaultValue={remSheet.editing?.notes ?? ""} />
           </Field>
           {remSheet.error && <p className="text-sm text-danger">{remSheet.error}</p>}
-          <SubmitRow saving={remSheet.saving} onDelete={remSheet.editing ? () => remSheet.run(() => deleteReminder(remSheet.editing!.id)) : undefined} />
+          <SubmitRow saving={remSheet.saving} onDelete={remSheet.editing ? () => remSheet.remove(() => deleteReminder(remSheet.editing!.id), `“${remSheet.editing!.title}”`) : undefined} />
         </form>
       </BottomSheet>
 

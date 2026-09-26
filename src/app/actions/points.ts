@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { DeletedRows } from "@/app/actions/undo";
 
 function revalidate() {
   revalidatePath("/puntos");
@@ -24,11 +25,12 @@ export async function saveReward(input: RewardInput) {
   revalidate();
 }
 
-export async function deleteReward(id: string) {
+export async function deleteReward(id: string): Promise<DeletedRows> {
   const supabase = await createClient();
-  const { error } = await supabase.from("rewards").delete().eq("id", id);
+  const { data, error } = await supabase.from("rewards").delete().eq("id", id).select();
   if (error) throw new Error(error.message);
   revalidate();
+  return { table: "rewards", rows: data ?? [] };
 }
 
 export async function redeemReward(memberId: string, rewardId: string) {

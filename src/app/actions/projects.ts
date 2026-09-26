@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { DeletedRows } from "@/app/actions/undo";
 import type { Horizon } from "@/lib/types";
 
 export type ProjectInput = {
@@ -50,9 +51,10 @@ export async function setProjectProgress(id: string, progress: number) {
   revalidate();
 }
 
-export async function deleteProject(id: string) {
+export async function deleteProject(id: string): Promise<DeletedRows> {
   const supabase = await createClient();
-  const { error } = await supabase.from("projects").delete().eq("id", id);
+  const { data, error } = await supabase.from("projects").delete().eq("id", id).select();
   if (error) throw new Error(error.message);
   revalidate();
+  return { table: "projects", rows: data ?? [] };
 }

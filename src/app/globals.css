@@ -178,3 +178,6 @@
 
 /* Los + y − del mapa, del tamaño de un dedo. */
 .leaflet-touch .leaflet-bar a { width: 40px !important; height: 40px !important; line-height: 40px !important; }
+
+/* Barrita que se va vaciando en el aviso de "Deshacer". */
+@keyframes lb-undo { from { width: 100%; } to { width: 0%; } }

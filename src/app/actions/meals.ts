@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { DeletedRows } from "@/app/actions/undo";
 import type { Ingredient, PantryItem, Recipe } from "@/lib/types";
 import { checkPantry, parseIngredientLines, scaleIngredients, toShoppingLine } from "@/lib/kitchen";
 
@@ -63,10 +64,11 @@ export async function saveMeal(input: MealInput): Promise<{ added: number; skipp
   return { added, skipped };
 }
 
-export async function deleteMeal(day: string, slot: "almuerzo" | "cena") {
+export async function deleteMeal(day: string, slot: "almuerzo" | "cena"): Promise<DeletedRows> {
   const supabase = await createClient();
-  const { error } = await supabase.from("meal_plans").delete().eq("day", day).eq("slot", slot);
+  const { data, error } = await supabase.from("meal_plans").delete().eq("day", day).eq("slot", slot).select();
   if (error) throw new Error(error.message);
   revalidatePath("/menu");
   revalidatePath("/");
+  return { table: "meal_plans", rows: data ?? [] };
 }

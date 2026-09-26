@@ -129,7 +129,7 @@ export function ImportantDates({ upcoming, dates, members }: { upcoming: Upcomin
             <Textarea name="gift_ideas" defaultValue={editing?.gift_ideas ?? ""} />
           </Field>
           {sheet.error && <p className="text-sm text-danger">{sheet.error}</p>}
-          <SubmitRow saving={sheet.saving} onDelete={editing ? () => sheet.run(() => deleteImportantDate(editing.id)) : undefined} />
+          <SubmitRow saving={sheet.saving} onDelete={editing ? () => sheet.remove(() => deleteImportantDate(editing.id), `“${editing.title}”`) : undefined} />
         </form>
       </BottomSheet>
     </>

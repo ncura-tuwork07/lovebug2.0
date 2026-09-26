@@ -414,7 +414,7 @@ export function FinanceView({
           <SubmitRow
             saving={expenseSheet.saving}
             submitLabel="Listo, anotado"
-            onDelete={expenseSheet.editing ? () => expenseSheet.run(() => deleteExpense(expenseSheet.editing!.id)) : undefined}
+            onDelete={expenseSheet.editing ? () => expenseSheet.remove(() => deleteExpense(expenseSheet.editing!.id), `el gasto “${expenseSheet.editing!.description}”`) : undefined}
           />
         </form>
       </BottomSheet>
@@ -458,7 +458,7 @@ export function FinanceView({
           {incomeSheet.error && <p className="text-sm text-danger">{incomeSheet.error}</p>}
           <SubmitRow
             saving={incomeSheet.saving}
-            onDelete={incomeSheet.editing ? () => incomeSheet.run(() => deleteIncome(incomeSheet.editing!.id)) : undefined}
+            onDelete={incomeSheet.editing ? () => incomeSheet.remove(() => deleteIncome(incomeSheet.editing!.id), `el ingreso “${incomeSheet.editing!.description}”`) : undefined}
           />
         </form>
       </BottomSheet>
@@ -502,7 +502,7 @@ export function FinanceView({
           {goalSheet.error && <p className="text-sm text-danger">{goalSheet.error}</p>}
           <SubmitRow
             saving={goalSheet.saving}
-            onDelete={goalSheet.editing ? () => goalSheet.run(() => deleteGoal(goalSheet.editing!.id)) : undefined}
+            onDelete={goalSheet.editing ? () => goalSheet.remove(() => deleteGoal(goalSheet.editing!.id), `la meta “${goalSheet.editing!.title}”`) : undefined}
           />
         </form>
       </BottomSheet>

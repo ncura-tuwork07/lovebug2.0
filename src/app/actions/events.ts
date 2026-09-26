@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { DeletedRows } from "@/app/actions/undo";
 import type { EventCategory } from "@/lib/types";
 
 export type EventInput = {
@@ -49,9 +50,10 @@ export async function saveEvent(input: EventInput) {
   revalidate();
 }
 
-export async function deleteEvent(id: string) {
+export async function deleteEvent(id: string): Promise<DeletedRows> {
   const supabase = await createClient();
-  const { error } = await supabase.from("calendar_events").delete().eq("id", id);
+  const { data, error } = await supabase.from("calendar_events").delete().eq("id", id).select();
   if (error) throw new Error(error.message);
   revalidate();
+  return { table: "calendar_events", rows: data ?? [] };
 }

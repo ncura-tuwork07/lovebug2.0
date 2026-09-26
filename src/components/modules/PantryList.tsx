@@ -136,7 +136,7 @@ export function PantryList({ items }: { items: PantryItem[] }) {
             <Textarea name="notes" defaultValue={sheet.editing?.notes ?? ""} placeholder="Vence en octubre…" />
           </Field>
           {sheet.error && <p className="text-sm text-danger">{sheet.error}</p>}
-          <SubmitRow saving={sheet.saving} onDelete={sheet.editing ? () => sheet.run(() => deletePantryItem(sheet.editing!.id)) : undefined} />
+          <SubmitRow saving={sheet.saving} onDelete={sheet.editing ? () => sheet.remove(() => deletePantryItem(sheet.editing!.id), `“${sheet.editing!.name}”`) : undefined} />
         </form>
       </BottomSheet>
     </div>

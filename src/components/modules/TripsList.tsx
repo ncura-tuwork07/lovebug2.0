@@ -194,7 +194,7 @@ export function TripsList({
           {sheet.error && <p className="text-sm text-danger">{sheet.error}</p>}
           <SubmitRow
             saving={sheet.saving}
-            onDelete={sheet.editing ? () => sheet.run(() => deleteTrip(sheet.editing!.id)) : undefined}
+            onDelete={sheet.editing ? () => sheet.remove(() => deleteTrip(sheet.editing!.id), "el traslado") : undefined}
           />
         </form>
       </BottomSheet>

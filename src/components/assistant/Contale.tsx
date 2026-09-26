@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BellRing, CalendarHeart, CarFront, CheckCircle2, ChefHat, Mic, PartyPopper, Pencil, PiggyBank, ShoppingCart, Sparkles, Square, type LucideIcon } from "lucide-react";
+import { BellRing, CalendarHeart, CarFront, CheckCircle2, ChefHat, Mic, PartyPopper, Pencil, PiggyBank, ShoppingCart, Sparkles, Square, Undo2, type LucideIcon } from "lucide-react";
 import type { Member } from "@/lib/types";
 import type { Plan, PlanItem, PlanKind } from "@/lib/assistant";
-import { applyPlan, type ApplyResult } from "@/app/actions/assistant";
+import { applyPlan, undoPlan, type ApplyResult } from "@/app/actions/assistant";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { useDictation } from "@/components/ui/useDictation";
 import { Input, MemberSelect, Textarea } from "@/components/ui/Field";
@@ -43,6 +43,7 @@ export function Contale({ members, today }: { members: Member[]; today: string }
   const [editing, setEditing] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [counts, setCounts] = useState<Extract<ApplyResult, { ok: true }> | null>(null);
+  const [undoState, setUndoState] = useState<"idle" | "busy" | "done" | "failed">("idle");
   const [tick, setTick] = useState(0);
   const [live, setLive] = useState<Live>({ summary: null, items: [] });
   const dictation = useDictation(text, setText);
@@ -114,6 +115,7 @@ export function Contale({ members, today }: { members: Member[]; today: string }
       return;
     }
     setCounts(res);
+    setUndoState("idle");
     setText("");
     setStage("done");
     router.refresh();
@@ -278,7 +280,25 @@ export function Contale({ members, today }: { members: Member[]; today: string }
           </div>
         )}
 
-        {stage === "done" && counts && (
+        {stage === "done" && counts && undoState === "done" && (
+          <div className="flex flex-col gap-4">
+            <p className="text-body text-ink">Listo, quedó todo como estaba antes. 👌</p>
+            <button
+              type="button"
+              onClick={() => {
+                setStage("input");
+                setPlan(null);
+                setRows([]);
+                setCounts(null);
+              }}
+              className="lb-btn"
+            >
+              Contarlo de nuevo
+            </button>
+          </div>
+        )}
+
+        {stage === "done" && counts && undoState !== "done" && (
           <div className="flex flex-col gap-4">
             <p className="text-body text-ink">Ya quedó todo al día. Lo ven todos en el hogar.</p>
             <div className="flex flex-wrap gap-2">
@@ -313,6 +333,21 @@ export function Contale({ members, today }: { members: Member[]; today: string }
             >
               Contar otra cosa
             </button>
+            {/* Por si la IA entendió algo mal: vuelve todo a como estaba antes de aplicar. */}
+            <button
+              type="button"
+              disabled={undoState === "busy"}
+              onClick={async () => {
+                setUndoState("busy");
+                const r = await undoPlan(counts.undo).catch(() => ({ ok: false }));
+                setUndoState(r.ok ? "done" : "failed");
+                router.refresh();
+              }}
+              className="flex min-h-11 items-center justify-center gap-2 text-sm font-semibold text-ink-faint disabled:opacity-60"
+            >
+              <Undo2 size={15} /> {undoState === "busy" ? "Deshaciendo…" : "Deshacer todo"}
+            </button>
+            {undoState === "failed" && <p className="text-sm text-danger">Se deshizo una parte. Revisá las pantallas.</p>}
           </div>
         )}
       </BottomSheet>

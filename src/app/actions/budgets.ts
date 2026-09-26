@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { DeletedRows } from "@/app/actions/undo";
 
 export async function saveBudget(category: string, monthlyLimit: number | string) {
   const supabase = await createClient();
@@ -14,9 +15,10 @@ export async function saveBudget(category: string, monthlyLimit: number | string
   revalidatePath("/finanzas");
 }
 
-export async function deleteBudget(category: string) {
+export async function deleteBudget(category: string): Promise<DeletedRows> {
   const supabase = await createClient();
-  const { error } = await supabase.from("budgets").delete().eq("category", category);
+  const { data, error } = await supabase.from("budgets").delete().eq("category", category).select();
   if (error) throw new Error(error.message);
   revalidatePath("/finanzas");
+  return { table: "budgets", rows: data ?? [] };
 }

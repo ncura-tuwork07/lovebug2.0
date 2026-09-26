@@ -199,7 +199,7 @@ export function MealPlanner({
           {sheet.error && <p className="text-sm text-danger">{sheet.error}</p>}
           <SubmitRow
             saving={sheet.saving}
-            onDelete={sheet.editing?.meal ? () => sheet.run(() => deleteMeal(sheet.editing!.day, sheet.editing!.slot)) : undefined}
+            onDelete={sheet.editing?.meal ? () => sheet.remove(() => deleteMeal(sheet.editing!.day, sheet.editing!.slot), `“${sheet.editing!.meal!.title}”`) : undefined}
           />
         </form>
       </BottomSheet>

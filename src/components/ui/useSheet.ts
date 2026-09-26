@@ -2,9 +2,12 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
+import { restoreRows, type DeletedRows } from "@/app/actions/undo";
+import { useUndo } from "@/components/ui/Undo";
 
 export function useSheet<T>() {
   const router = useRouter();
+  const offerUndo = useUndo();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<T | null>(null);
   const [saving, setSaving] = useState(false);
@@ -46,7 +49,17 @@ export function useSheet<T>() {
     [router, close]
   );
 
-  return { open, editing, saving, error, openNew, openEdit, close, run, setError };
+  // Borra, cierra y ofrece "Deshacer" unos segundos (en vez de preguntar "¿seguro?").
+  const remove = useCallback(
+    (fn: () => Promise<DeletedRows>, what: string) =>
+      run(async () => {
+        const deleted = await fn();
+        if (deleted.rows.length) offerUndo(`Borraste ${what}`, () => restoreRows(deleted));
+      }),
+    [run, offerUndo]
+  );
+
+  return { open, editing, saving, error, openNew, openEdit, close, run, remove, setError };
 }
 
 export function fd(form: HTMLFormElement) {

@@ -22,8 +22,18 @@ import {
 // El plan se arma en /api/contale (en streaming); acá solo se aplica lo que la persona aprobó:
 // crear lo nuevo, cambiar lo que ya estaba y cancelar lo que no va más.
 
+// Lo necesario para volver todo atrás ("Deshacer todo" en la pantalla de listo): qué se creó, cómo
+// estaban las filas que se cambiaron y las que se cancelaron, y los topes de antes.
+export type PlanUndo = {
+  created: { table: string; ids: string[] }[];
+  changed: { table: string; rows: Row[] }[];
+  cancelled: { table: string; rows: Row[] }[];
+  budgets: { category: string; previous: number | null }[];
+  familyEvents: Row[];
+};
+
 export type ApplyResult =
-  | { ok: true; created: Partial<Record<PlanKind, number>>; changed: number; cancelled: number }
+  | { ok: true; created: Partial<Record<PlanKind, number>>; changed: number; cancelled: number; undo: PlanUndo }
   | { ok: false; error: string };
 
 type Row = Record<string, unknown> & { id: string };
@@ -140,6 +150,7 @@ export async function applyPlan(rawItems: PlanItem[]): Promise<ApplyResult> {
 
   const supabase = await createClient();
   const errors: string[] = [];
+  const undo: PlanUndo = { created: [], changed: [], cancelled: [], budgets: [], familyEvents: [] };
 
   // ── Crear ──
   const creates = items.filter((i) => i.action === "crear");
@@ -203,12 +214,21 @@ export async function applyPlan(rawItems: PlanItem[]): Promise<ApplyResult> {
     ],
     ["meal_plans", by("comida").map((i) => ({ day: day(i), slot: pick(MEAL_SLOTS, i.category, "cena"), title: i.title, notes: i.notes }))],
   ];
-  const insertResults = await Promise.all(inserts.filter(([, rows]) => rows.length).map(([table, rows]) => supabase.from(table).insert(rows)));
-  for (const r of insertResults) if (r.error) errors.push(r.error.message);
+  const toInsert = inserts.filter(([, rows]) => rows.length);
+  const insertResults = await Promise.all(toInsert.map(([table, rows]) => supabase.from(table).insert(rows).select("id")));
+  insertResults.forEach((r, i) => {
+    if (r.error) errors.push(r.error.message);
+    else undo.created.push({ table: toInsert[i][0], ids: (r.data ?? []).map((x) => x.id as string) });
+  });
 
   // Topes nuevos: si esa categoría ya tenía uno, se actualiza (uno por categoría y hogar).
   const newBudgets = by("presupuesto").filter((i) => i.amount && valid(EXPENSE_KEYS, i.category));
   if (newBudgets.length) {
+    const { data: before } = await supabase.from("budgets").select("category, monthly_limit").in("category", newBudgets.map((i) => i.category!));
+    for (const i of newBudgets) {
+      const prev = (before ?? []).find((b) => b.category === i.category);
+      undo.budgets.push({ category: i.category!, previous: prev ? Number(prev.monthly_limit) : null });
+    }
     const { error } = await supabase
       .from("budgets")
       .upsert(newBudgets.map((i) => ({ household_id: household.id, category: i.category, monthly_limit: i.amount })), { onConflict: "household_id,category" });
@@ -244,6 +264,7 @@ export async function applyPlan(rawItems: PlanItem[]): Promise<ApplyResult> {
               notes: i.notes ?? ((cur.notes as string | null) ?? null),
             });
             changed++;
+            undo.familyEvents.push(cur);
           } catch (e) {
             errors.push(e instanceof Error ? e.message : "No se pudo cambiar el evento.");
           }
@@ -253,7 +274,12 @@ export async function applyPlan(rawItems: PlanItem[]): Promise<ApplyResult> {
         if (!Object.keys(patch).length) continue;
         const { error: upErr } = await supabase.from(TABLE[kind]).update(patch).eq("id", cur.id);
         if (upErr) errors.push(upErr.message);
-        else changed++;
+        else {
+          changed++;
+          const prev = undo.changed.find((c) => c.table === TABLE[kind]);
+          if (prev) prev.rows.push(cur);
+          else undo.changed.push({ table: TABLE[kind], rows: [cur] });
+        }
       }
     })
   );
@@ -264,13 +290,16 @@ export async function applyPlan(rawItems: PlanItem[]): Promise<ApplyResult> {
   await Promise.all(
     [...new Set(cancels.map((i) => i.kind))].map(async (kind) => {
       const ids = cancels.filter((i) => i.kind === kind).map((i) => i.target!.id);
-      const { data, error } = await supabase.from(TABLE[kind]).delete().in("id", ids).select("id");
+      const { data, error } = await supabase.from(TABLE[kind]).delete().in("id", ids).select("*");
       if (error) errors.push(error.message);
-      else cancelled += data?.length ?? 0;
+      else {
+        cancelled += data?.length ?? 0;
+        if (data?.length) undo.cancelled.push({ table: TABLE[kind], rows: data as Row[] });
+      }
     })
   );
 
-  for (const path of ["/", "/calendario", "/logistica", "/compras", "/vencimientos", "/menu", "/puntos", "/eventos", "/finanzas"]) revalidatePath(path);
+  revalidateAll();
 
   const created: Partial<Record<PlanKind, number>> = {};
   for (const i of creates) created[i.kind] = (created[i.kind] ?? 0) + 1;
@@ -279,5 +308,55 @@ export async function applyPlan(rawItems: PlanItem[]): Promise<ApplyResult> {
     console.error("[assistant] apply failed:", errors.join(" | "));
     return { ok: false, error: "Se aplicó una parte pero algo falló. Revisá las pantallas y probá de nuevo con lo que falte." };
   }
-  return { ok: true, created, changed, cancelled };
+  return { ok: true, created, changed, cancelled, undo };
+}
+
+const revalidateAll = () => {
+  for (const path of ["/", "/calendario", "/logistica", "/compras", "/vencimientos", "/menu", "/puntos", "/eventos", "/finanzas"]) revalidatePath(path);
+};
+
+// "Deshacer todo": borra lo creado, deja lo cambiado como estaba y vuelve a poner lo cancelado.
+// Solo toca las tablas del asistente; RLS limita todo al propio hogar.
+export async function undoPlan(undo: PlanUndo): Promise<{ ok: boolean; error?: string }> {
+  const allowed = new Set(Object.values(TABLE));
+  const supabase = await createClient();
+  const errors: string[] = [];
+  const check = (r: { error: { message: string } | null }) => r.error && errors.push(r.error.message);
+
+  for (const c of undo.created) if (allowed.has(c.table) && c.ids.length) check(await supabase.from(c.table).delete().in("id", c.ids));
+  for (const c of undo.changed) {
+    if (!allowed.has(c.table)) continue;
+    for (const { id, ...rest } of c.rows) check(await supabase.from(c.table).update(rest).eq("id", id));
+  }
+  for (const c of undo.cancelled) if (allowed.has(c.table) && c.rows.length) check(await supabase.from(c.table).insert(c.rows));
+  for (const b of undo.budgets) {
+    check(
+      b.previous === null
+        ? await supabase.from("budgets").delete().eq("category", b.category)
+        : await supabase.from("budgets").update({ monthly_limit: b.previous }).eq("category", b.category)
+    );
+  }
+  for (const f of undo.familyEvents) {
+    try {
+      await saveFamilyEvent({
+        id: String(f.id),
+        title: String(f.title),
+        event_date: String(f.event_date),
+        event_time: (f.event_time as string | null) ?? null,
+        location: (f.location as string | null) ?? null,
+        guests: Number(f.guests ?? 0),
+        budget: (f.budget as number | null) ?? null,
+        notes: (f.notes as string | null) ?? null,
+      });
+    } catch (e) {
+      errors.push(e instanceof Error ? e.message : "evento");
+    }
+  }
+
+  revalidateAll();
+  if (errors.length) {
+    console.error("[assistant] undo failed:", errors.join(" | "));
+    return { ok: false, error: "Se deshizo una parte. Revisá las pantallas." };
+  }
+  return { ok: true };
 }

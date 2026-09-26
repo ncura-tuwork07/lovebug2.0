@@ -87,7 +87,7 @@ export function BudgetsPanel({ budgets, expenses }: { budgets: Budget[]; expense
             <Input name="monthly_limit" type="number" inputMode="decimal" step="any" min="1" required autoFocus defaultValue={sheet.editing?.monthly_limit ?? ""} />
           </Field>
           {sheet.error && <p className="text-sm text-danger">{sheet.error}</p>}
-          <SubmitRow saving={sheet.saving} onDelete={sheet.editing ? () => sheet.run(() => deleteBudget(sheet.editing!.category)) : undefined} />
+          <SubmitRow saving={sheet.saving} onDelete={sheet.editing ? () => sheet.remove(() => deleteBudget(sheet.editing!.category), "el tope") : undefined} />
         </form>
       </BottomSheet>
     </div>

@@ -136,7 +136,7 @@ export function TasksList({
           {sheet.error && <p className="text-sm text-danger">{sheet.error}</p>}
           <SubmitRow
             saving={sheet.saving}
-            onDelete={sheet.editing ? () => sheet.run(() => deleteTask(sheet.editing!.id)) : undefined}
+            onDelete={sheet.editing ? () => sheet.remove(() => deleteTask(sheet.editing!.id), `“${sheet.editing!.title}”`) : undefined}
           />
         </form>
       </BottomSheet>

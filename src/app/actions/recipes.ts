@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { DeletedRows } from "@/app/actions/undo";
 import type { Ingredient } from "@/lib/types";
 
 export type RecipeInput = {
@@ -47,9 +48,10 @@ export async function saveRecipe(input: RecipeInput) {
   revalidate();
 }
 
-export async function deleteRecipe(id: string) {
+export async function deleteRecipe(id: string): Promise<DeletedRows> {
   const supabase = await createClient();
-  const { error } = await supabase.from("recipes").delete().eq("id", id);
+  const { data, error } = await supabase.from("recipes").delete().eq("id", id).select();
   if (error) throw new Error(error.message);
   revalidate();
+  return { table: "recipes", rows: data ?? [] };
 }

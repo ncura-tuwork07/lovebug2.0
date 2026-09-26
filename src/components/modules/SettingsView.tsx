@@ -140,7 +140,7 @@ export function SettingsView({
       </section>
 
       {/* Invitación */}
-      <section className="lb-card">
+      <section id="invitar" className="lb-card scroll-mt-4">
         <h2 className="text-h2 mb-1 flex items-center gap-2 font-display uppercase tracking-wide text-success">
           <Share2 size={16} /> Invitar con su propio login
         </h2>
@@ -213,7 +213,9 @@ export function SettingsView({
         />
       </section>
 
-      <PushSetup />
+      <div id="avisos" className="scroll-mt-4">
+        <PushSetup />
+      </div>
 
       {isAdmin && (
         <Link href="/admin" className="lb-card flex items-center gap-3">
@@ -228,7 +230,9 @@ export function SettingsView({
         </Link>
       )}
 
-      <PasskeysSection passkeys={passkeys} />
+      <div id="huella" className="scroll-mt-4">
+        <PasskeysSection passkeys={passkeys} />
+      </div>
 
       {/* Cuenta */}
       <section className="lb-card">

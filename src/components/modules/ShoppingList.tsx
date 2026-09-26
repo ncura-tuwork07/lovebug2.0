@@ -196,7 +196,7 @@ export function ShoppingList({
           {sheet.error && <p className="text-sm text-danger">{sheet.error}</p>}
           <SubmitRow
             saving={sheet.saving}
-            onDelete={sheet.editing ? () => sheet.run(() => deleteShoppingItem(sheet.editing!.id)) : undefined}
+            onDelete={sheet.editing ? () => sheet.remove(() => deleteShoppingItem(sheet.editing!.id), `“${sheet.editing!.name}”`) : undefined}
           />
         </form>
       </BottomSheet>

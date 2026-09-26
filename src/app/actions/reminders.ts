@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { DeletedRows } from "@/app/actions/undo";
 import type { ReminderCategory } from "@/lib/types";
 
 function revalidate() {
@@ -71,11 +72,12 @@ export async function reopenReminder(id: string) {
   revalidate();
 }
 
-export async function deleteReminder(id: string) {
+export async function deleteReminder(id: string): Promise<DeletedRows> {
   const supabase = await createClient();
-  const { error } = await supabase.from("reminders").delete().eq("id", id);
+  const { data, error } = await supabase.from("reminders").delete().eq("id", id).select();
   if (error) throw new Error(error.message);
   revalidate();
+  return { table: "reminders", rows: data ?? [] };
 }
 
 // ── Fechas importantes ──────────────────────────────────
@@ -111,9 +113,10 @@ export async function saveImportantDate(input: ImportantDateInput) {
   revalidate();
 }
 
-export async function deleteImportantDate(id: string) {
+export async function deleteImportantDate(id: string): Promise<DeletedRows> {
   const supabase = await createClient();
-  const { error } = await supabase.from("important_dates").delete().eq("id", id);
+  const { data, error } = await supabase.from("important_dates").delete().eq("id", id).select();
   if (error) throw new Error(error.message);
   revalidate();
+  return { table: "important_dates", rows: data ?? [] };
 }

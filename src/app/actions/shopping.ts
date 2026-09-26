@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { DeletedRows } from "@/app/actions/undo";
 import type { ShoppingCategory } from "@/lib/types";
 
 export async function addShoppingItems(
@@ -48,11 +49,12 @@ export async function toggleShoppingItem(id: string, checked: boolean) {
   revalidatePath("/compras");
 }
 
-export async function deleteShoppingItem(id: string) {
+export async function deleteShoppingItem(id: string): Promise<DeletedRows> {
   const supabase = await createClient();
-  const { error } = await supabase.from("shopping_items").delete().eq("id", id);
+  const { data, error } = await supabase.from("shopping_items").delete().eq("id", id).select();
   if (error) throw new Error(error.message);
   revalidatePath("/compras");
+  return { table: "shopping_items", rows: data ?? [] };
 }
 
 export async function clearCheckedShopping() {

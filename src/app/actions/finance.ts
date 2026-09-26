@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { DeletedRows } from "@/app/actions/undo";
 import type { ExpenseCategory, IncomeSource } from "@/lib/types";
 
 function revalidate() {
@@ -49,11 +50,12 @@ export async function saveExpense(input: ExpenseInput) {
   revalidate();
 }
 
-export async function deleteExpense(id: string) {
+export async function deleteExpense(id: string): Promise<DeletedRows> {
   const supabase = await createClient();
-  const { error } = await supabase.from("expenses").delete().eq("id", id);
+  const { data, error } = await supabase.from("expenses").delete().eq("id", id).select();
   if (error) throw new Error(error.message);
   revalidate();
+  return { table: "expenses", rows: data ?? [] };
 }
 
 // ── Ingresos ────────────────────────────────────────────
@@ -87,11 +89,12 @@ export async function saveIncome(input: IncomeInput) {
   revalidate();
 }
 
-export async function deleteIncome(id: string) {
+export async function deleteIncome(id: string): Promise<DeletedRows> {
   const supabase = await createClient();
-  const { error } = await supabase.from("incomes").delete().eq("id", id);
+  const { data, error } = await supabase.from("incomes").delete().eq("id", id).select();
   if (error) throw new Error(error.message);
   revalidate();
+  return { table: "incomes", rows: data ?? [] };
 }
 
 // "Modo borrador": convierte en reales todos los ingresos y gastos hipotéticos de un mes
@@ -148,9 +151,10 @@ export async function addToGoal(id: string, amount: number | string) {
   revalidate();
 }
 
-export async function deleteGoal(id: string) {
+export async function deleteGoal(id: string): Promise<DeletedRows> {
   const supabase = await createClient();
-  const { error } = await supabase.from("savings_goals").delete().eq("id", id);
+  const { data, error } = await supabase.from("savings_goals").delete().eq("id", id).select();
   if (error) throw new Error(error.message);
   revalidate();
+  return { table: "savings_goals", rows: data ?? [] };
 }

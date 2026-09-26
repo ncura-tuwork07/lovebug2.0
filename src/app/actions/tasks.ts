@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { DeletedRows } from "@/app/actions/undo";
 
 export type TaskInput = {
   id?: string;
@@ -58,9 +59,10 @@ export async function toggleTask(id: string, done: boolean) {
   revalidate();
 }
 
-export async function deleteTask(id: string) {
+export async function deleteTask(id: string): Promise<DeletedRows> {
   const supabase = await createClient();
-  const { error } = await supabase.from("daily_tasks").delete().eq("id", id);
+  const { data, error } = await supabase.from("daily_tasks").delete().eq("id", id).select();
   if (error) throw new Error(error.message);
   revalidate();
+  return { table: "daily_tasks", rows: data ?? [] };
 }

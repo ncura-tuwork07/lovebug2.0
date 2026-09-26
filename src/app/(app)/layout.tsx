@@ -7,6 +7,7 @@ import { UsageTracker } from "@/components/UsageTracker";
 import { PasskeyPrompt } from "@/components/auth/PasskeyPrompt";
 import { NavigationProgress } from "@/components/NavigationProgress";
 import { getSessionContext } from "@/lib/data";
+import { UndoProvider } from "@/components/ui/Undo";
 
 export const dynamic = "force-dynamic";
 
@@ -23,11 +24,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <UsageTracker />
       <PasskeyPrompt />
       <LocationSharer memberId={me.id} enabled={me.share_location} />
-      <div className="mx-auto w-full max-w-md flex-1">
-        <Header />
-        <main className="pb-28">{children}</main>
-      </div>
-      <BottomNav />
+      <UndoProvider>
+        <div className="mx-auto w-full max-w-md flex-1">
+          <Header />
+          <main className="pb-28">{children}</main>
+        </div>
+        <BottomNav />
+      </UndoProvider>
     </HouseholdProvider>
   );
 }

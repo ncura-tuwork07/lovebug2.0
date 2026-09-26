@@ -167,7 +167,7 @@ export function PointsView({
             </Field>
           </div>
           {rewardSheet.error && <p className="text-sm text-danger">{rewardSheet.error}</p>}
-          <SubmitRow saving={rewardSheet.saving} onDelete={rewardSheet.editing ? () => rewardSheet.run(() => deleteReward(rewardSheet.editing!.id)) : undefined} />
+          <SubmitRow saving={rewardSheet.saving} onDelete={rewardSheet.editing ? () => rewardSheet.remove(() => deleteReward(rewardSheet.editing!.id), `el premio “${rewardSheet.editing!.title}”`) : undefined} />
         </form>
       </BottomSheet>
 

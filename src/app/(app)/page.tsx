@@ -4,7 +4,7 @@ import Link from "next/link";
 import { LadybugLoader } from "@/components/ui/LadybugLoader";
 import { BellRing, CalendarHeart, CarFront, ChefHat, ChevronRight, ClipboardList, MapPin, PartyPopper, ShoppingCart } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getSessionContext } from "@/lib/data";
+import { getPasskeys, getSessionContext } from "@/lib/data";
 import { isModuleEnabled } from "@/lib/modules";
 import { addDays, formatARS, formatDay, todayAR } from "@/lib/format";
 import { daysUntilLabel, upcomingDates } from "@/lib/dates";
@@ -15,6 +15,7 @@ import { TripsList } from "@/components/modules/TripsList";
 import { EventsList } from "@/components/modules/EventsList";
 import { DailyInspiration } from "@/components/DailyInspiration";
 import { Contale } from "@/components/assistant/Contale";
+import { FirstSteps, type FirstStep } from "@/components/FirstSteps";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export default async function HoyPage() {
   const in7 = addDays(today, 7);
   const dow = new Date(`${today}T12:00:00-03:00`).getUTCDay(); // 0 = domingo
 
-  const [{ members, me, household }, tasksRes, tripsRes, eventsRes, remRes, datesRes, mealsRes, shopRes, famRes, summary] = await Promise.all([
+  const [{ members, me, household }, tasksRes, tripsRes, eventsRes, remRes, datesRes, mealsRes, shopRes, famRes, summary, passkeys] = await Promise.all([
     getSessionContext(),
     supabase.from("daily_tasks").select("*").lte("due_date", today).order("done").order("created_at"),
     supabase.from("logistics_trips").select("*").eq("trip_date", today).order("departure_time", { nullsFirst: false }),
@@ -41,6 +42,7 @@ export default async function HoyPage() {
     supabase.from("shopping_items").select("id", { count: "exact", head: true }).eq("checked", false),
     supabase.from("family_events").select("id, title, event_date, guests").eq("status", "planning").gte("event_date", today).lte("event_date", addDays(today, 30)).order("event_date"),
     dow === 0 || dow === 1 ? computeWeeklySummary(supabase, today) : null,
+    getPasskeys().catch(() => []),
   ]);
   const on = (key: string) => isModuleEnabled(household?.settings, key);
 
@@ -52,6 +54,15 @@ export default async function HoyPage() {
   const meals = (mealsRes.data ?? []) as MealPlan[];
   const pendingShopping = shopRes.count ?? 0;
   const famEvents = (famRes.data ?? []) as Pick<FamilyEvent, "id" | "title" | "event_date" | "guests">[];
+
+  // Primeros pasos: se tildan solos a medida que el hogar se arma (los avisos los mira el celu).
+  const firstSteps: FirstStep[] = [
+    { key: "familia", label: "Sumá a tu familia", hint: "Cada uno con su color, su rol y sus datos.", href: "/familia", done: members.length >= 2 },
+    { key: "cumples", label: "Cargá los cumpleaños", hint: "Así el calendario te avisa con tiempo para el regalo.", href: "/familia", done: members.length >= 2 && members.every((m) => m.birthday) },
+    { key: "invitar", label: "Invitá a los que viven con vos", hint: "Con un link, para que entren desde su celu.", href: "/ajustes#invitar", done: members.filter((m) => m.user_id).length >= 2 },
+    { key: "huella", label: "Activá la huella", hint: "Para que nadie más pueda abrir Lovebug en tu celu.", href: "/ajustes#huella", done: passkeys.length > 0 },
+    { key: "avisos", label: "Activá los avisos", hint: "Vencimientos, traslados y cumples, directo al celu.", href: "/ajustes#avisos", done: false },
+  ];
 
   // "Sábado, 26 de septiembre": solo la primera letra en mayúscula (capitalize ponía "De").
   const date = new Date(`${today}T12:00:00-03:00`).toLocaleDateString("es-AR", {
@@ -70,6 +81,8 @@ export default async function HoyPage() {
       </header>
 
       {process.env.ANTHROPIC_API_KEY && <Contale members={members} today={today} />}
+
+      {household && <FirstSteps steps={firstSteps} householdId={household.id} />}
 
       {/* Accesos rápidos */}
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">

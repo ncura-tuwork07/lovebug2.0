@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { DeletedRows } from "@/app/actions/undo";
 import type { ShoppingCategory } from "@/lib/types";
 
 function revalidate() {
@@ -51,11 +52,12 @@ export async function adjustPantry(id: string, delta: number) {
   revalidate();
 }
 
-export async function deletePantryItem(id: string) {
+export async function deletePantryItem(id: string): Promise<DeletedRows> {
   const supabase = await createClient();
-  const { error } = await supabase.from("pantry_items").delete().eq("id", id);
+  const { data, error } = await supabase.from("pantry_items").delete().eq("id", id).select();
   if (error) throw new Error(error.message);
   revalidate();
+  return { table: "pantry_items", rows: data ?? [] };
 }
 
 // Pasa lo comprado (tachado en Compras) a la despensa y vacía el changuito.

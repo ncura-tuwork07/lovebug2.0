@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { DeletedRows } from "@/app/actions/undo";
 import type { Transport } from "@/lib/types";
 
 export type TripInput = {
@@ -53,9 +54,10 @@ export async function toggleTrip(id: string, done: boolean) {
   revalidate();
 }
 
-export async function deleteTrip(id: string) {
+export async function deleteTrip(id: string): Promise<DeletedRows> {
   const supabase = await createClient();
-  const { error } = await supabase.from("logistics_trips").delete().eq("id", id);
+  const { data, error } = await supabase.from("logistics_trips").delete().eq("id", id).select();
   if (error) throw new Error(error.message);
   revalidate();
+  return { table: "logistics_trips", rows: data ?? [] };
 }

@@ -157,7 +157,7 @@ export function RecipesList({ recipes }: { recipes: Recipe[] }) {
             </p>
           )}
           {sheet.error && <p className="text-sm text-danger">{sheet.error}</p>}
-          <SubmitRow saving={sheet.saving} onDelete={sheet.editing ? () => sheet.run(() => deleteRecipe(sheet.editing!.id)) : undefined} />
+          <SubmitRow saving={sheet.saving} onDelete={sheet.editing ? () => sheet.remove(() => deleteRecipe(sheet.editing!.id), `la receta “${sheet.editing!.title}”`) : undefined} />
         </form>
       </BottomSheet>
     </div>
