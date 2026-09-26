@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { MailCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { createHousehold } from "@/app/actions/household";
+import { confirmDeviceUnlock } from "@/app/actions/appLock";
 import { AuthInput, AuthLink, AuthShell, RoleInput } from "@/components/auth/AuthShell";
 
 export default function RegistroPage() {
@@ -41,6 +42,7 @@ export default function RegistroPage() {
 
       if (data.session) {
         await createHousehold({ name: householdName, memberName: name, role });
+        await confirmDeviceUnlock();
         router.push("/");
         router.refresh();
         return;

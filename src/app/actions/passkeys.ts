@@ -11,33 +11,9 @@ import {
 } from "@simplewebauthn/server";
 import { isoBase64URL, isoUint8Array } from "@simplewebauthn/server/helpers";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { getOrigin, getRpID, PASSKEY_CHALLENGE_TTL_MINUTES, RP_NAME } from "@/lib/webauthn";
-
-function requireAdmin() {
-  const admin = createAdminClient();
-  if (!admin) throw new Error("Los accesos con huella no están configurados en el servidor.");
-  return admin;
-}
-
-// Los desafíos son de un solo uso y viven poco: borramos los vencidos cada vez que creamos uno.
-async function saveChallenge(admin: ReturnType<typeof requireAdmin>, challenge: string, userId: string | null): Promise<string> {
-  const staleBefore = new Date(Date.now() - PASSKEY_CHALLENGE_TTL_MINUTES * 60_000).toISOString();
-  await admin.from("passkey_challenges").delete().lt("created_at", staleBefore);
-  const { data, error } = await admin.from("passkey_challenges").insert({ challenge, user_id: userId }).select("id").single();
-  if (error) throw new Error(error.message);
-  return data.id as string;
-}
-
-async function consumeChallenge(admin: ReturnType<typeof requireAdmin>, challengeId: string): Promise<{ challenge: string; user_id: string | null }> {
-  const { data, error } = await admin.from("passkey_challenges").select("challenge, user_id, created_at").eq("id", challengeId).maybeSingle();
-  await admin.from("passkey_challenges").delete().eq("id", challengeId);
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("El pedido venció. Probá de nuevo.");
-  const ageMinutes = (Date.now() - new Date(data.created_at).getTime()) / 60_000;
-  if (ageMinutes > PASSKEY_CHALLENGE_TTL_MINUTES) throw new Error("El pedido venció. Probá de nuevo.");
-  return data;
-}
+import { getOrigin, getRpID, RP_NAME } from "@/lib/webauthn";
+import { markDeviceUnlocked } from "@/lib/appLock";
+import { consumeChallenge, requireAdmin, saveChallenge } from "@/lib/passkeyChallenges";
 
 // ───────────────── Alta de una passkey (desde Ajustes, ya logueado) ─────────────────
 
@@ -154,5 +130,7 @@ export async function verifyPasskeyLogin(input: { challengeId: string; response:
 
   const { data: link, error: linkError } = await admin.auth.admin.generateLink({ type: "magiclink", email: userData.user.email });
   if (linkError) throw new Error(linkError.message);
+  // Ya mostró la huella recién: no hace falta pedírsela de nuevo apenas entre.
+  await markDeviceUnlocked(saved.user_id as string);
   return { email: userData.user.email, token: link.properties.hashed_token };
 }

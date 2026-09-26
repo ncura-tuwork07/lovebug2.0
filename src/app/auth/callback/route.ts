@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { markDeviceUnlocked } from "@/lib/appLock";
 
 // Destino de los links de email (confirmación de cuenta, recuperación de contraseña).
 export async function GET(request: NextRequest) {
@@ -22,5 +23,10 @@ export async function GET(request: NextRequest) {
   }
 
   if (!ok) return NextResponse.redirect(`${origin}/login?error=link`);
+  // El link de email ya prueba quién es: no hace falta pedir la huella de nuevo al entrar.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) await markDeviceUnlocked(user.id);
   return NextResponse.redirect(`${origin}${next}`);
 }

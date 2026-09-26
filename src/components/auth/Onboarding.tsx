@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { createHousehold, joinHousehold } from "@/app/actions/household";
+import { confirmDeviceUnlock } from "@/app/actions/appLock";
 import { AuthInput, AuthShell, RoleInput } from "@/components/auth/AuthShell";
 
 type Mode = "create" | "join";
@@ -37,6 +38,7 @@ export function Onboarding({
     try {
       if (mode === "create") await createHousehold({ name: householdName, memberName: name, role });
       else await joinHousehold({ code, memberName: name, role });
+      await confirmDeviceUnlock();
       router.push("/");
       router.refresh();
     } catch (err) {
