@@ -50,7 +50,7 @@ Cómo armarlo:
 - Tamaños realistas: dormitorio 3×3 a 4×4, principal hasta 4×5; baño 2×2 o 2×3; cocina 3×3 a 3×4; living 4×5 a 6×6; comedor 3×4; lavadero 2×2; pasillo de 1 de ancho; patio o jardín grande al fondo (y alto) o adelante si lo dicen.
 - Respetá lo que cuentan: cuántos dormitorios, qué da a qué ("la cocina da al patio", "el baño está entre los cuartos"), en qué piso está cada cosa. Si algo no lo dicen, ubicalo donde suele estar en una casa argentina.
 - Las fotos sirven para saber qué ambientes hay, qué tan grandes son y qué se ve desde dónde (una puerta, una ventana al patio). No inventes ambientes que no aparezcan ni en el texto ni en las fotos, salvo un pasillo o entrada si hace falta para conectar.
-- name: corto y como lo diría la familia ("Cuarto de Salvi", "Baño de arriba", "Living"). Si nombran de quién es un cuarto, usalo.
+- name: corto y como lo diría la familia ("Cuarto de Mica", "Baño de arriba", "Living"). Si nombran de quién es un cuarto, usalo.
 - kind, uno de: ${kinds}.
 - Máximo 20 ambientes en total.
 - summary: 1 o 2 oraciones cálidas, en voseo rioplatense, contando qué armaste y que es un boceto que pueden acomodar tocando cada ambiente. Sin saludos.`;

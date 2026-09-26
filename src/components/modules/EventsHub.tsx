@@ -98,7 +98,7 @@ export function EventsHub({ events }: { events: FamilyEvent[] }) {
       <BottomSheet open={sheet.open} onClose={sheet.close} title="Nuevo evento">
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <Field label="Qué celebran">
-            <Input name="title" required autoFocus placeholder="Cumple de Juana" />
+            <Input name="title" required autoFocus placeholder="Cumple de la abuela" />
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Fecha">

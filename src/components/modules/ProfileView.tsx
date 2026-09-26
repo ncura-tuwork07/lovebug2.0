@@ -189,7 +189,7 @@ export function ProfileView({
             <Input name="name" required defaultValue={member.name} />
           </Field>
           <Field label="Apodo">
-            <Input name="nickname" defaultValue={member.nickname ?? ""} placeholder="Naza, Jaz…" />
+            <Input name="nickname" defaultValue={member.nickname ?? ""} placeholder="Pato, Coti…" />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">

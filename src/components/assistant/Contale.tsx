@@ -166,7 +166,7 @@ export function Contale({ members, today }: { members: Member[]; today: string }
               rows={6}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Hoy a las 16 tengo reunión de padres en el jardín y a las 17 lo retiro. El sábado a las 8 Juani se va de campamento desde la parroquia; hay que comprarle la bolsa de dormir…"
+              placeholder="Hoy a las 16 tengo reunión de padres en el jardín y a las 17 lo retiro. El sábado a las 8 Mica se va de campamento desde la parroquia; hay que comprarle la bolsa de dormir…"
             />
             {error && <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
             <button type="button" onClick={() => organize()} disabled={text.trim().length < 8} className="lb-btn flex items-center justify-center gap-2 disabled:opacity-60">
@@ -251,7 +251,7 @@ export function Contale({ members, today }: { members: Member[]; today: string }
                 value={correction}
                 onChange={(e) => setCorrection(e.target.value)}
                 disabled={stage === "saving"}
-                placeholder={plan.questions.length ? "Respondé o corregí algo: “la lleva Jaz”, “Juani y Juana son la misma”…" : "¿Algo para corregir o sumar?"}
+                placeholder={plan.questions.length ? "Respondé o corregí algo: “la lleva papá”, “Mica y Micaela son la misma”…" : "¿Algo para corregir o sumar?"}
               />
               {correction.trim().length > 2 && (
                 <button type="button" onClick={() => organize(correction)} className="min-h-11 rounded-md border-[1.5px] border-line text-sm font-semibold text-ink">

@@ -53,18 +53,20 @@ export default async function HoyPage() {
   const pendingShopping = shopRes.count ?? 0;
   const famEvents = (famRes.data ?? []) as Pick<FamilyEvent, "id" | "title" | "event_date" | "guests">[];
 
-  const heading = new Date(`${today}T12:00:00-03:00`).toLocaleDateString("es-AR", {
+  // "Sábado, 26 de septiembre": solo la primera letra en mayúscula (capitalize ponía "De").
+  const date = new Date(`${today}T12:00:00-03:00`).toLocaleDateString("es-AR", {
     weekday: "long",
     day: "numeric",
     month: "long",
     timeZone: "America/Argentina/Buenos_Aires",
   });
+  const heading = date.charAt(0).toUpperCase() + date.slice(1);
 
   return (
     <div className="flex flex-col gap-6 px-4 pt-6">
       <header>
         <p className="text-sm text-amber">{me ? `Buen día, ${me.nickname ?? me.name} ☀️` : "Hoy es"}</p>
-        <h1 className="text-display font-display font-bold capitalize text-ink">{heading}</h1>
+        <h1 className="text-display font-display font-bold text-ink">{heading}</h1>
       </header>
 
       {process.env.ANTHROPIC_API_KEY && <Contale members={members} today={today} />}

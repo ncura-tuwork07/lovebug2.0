@@ -489,7 +489,7 @@ function RoomEditor({ sheet, rooms, defaultFloor, onSaved }: { sheet: ReturnType
           </Field>
         </div>
         <Field label="Nombre">
-          <Input key={editing?.id ?? "new"} name="name" required maxLength={40} defaultValue={editing?.name ?? ""} placeholder={`${ROOM_STYLE[draft.kind].label}, Cuarto de Salvi…`} />
+          <Input key={editing?.id ?? "new"} name="name" required maxLength={40} defaultValue={editing?.name ?? ""} placeholder={`${ROOM_STYLE[draft.kind].label}, Cuarto de Mica…`} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Ancho (metros)">
@@ -653,7 +653,7 @@ function SketchSheet({ open, onClose, hasRooms, onUsed }: { open: boolean; onClo
               rows={5}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Ej: Casa de dos plantas. Abajo, living-comedor al frente, la cocina atrás que da al patio, un baño chico y el lavadero. Arriba, tres cuartos (el nuestro, el de Salvi y el de Juana) y un baño en el medio."
+              placeholder="Ej: Casa de dos plantas. Abajo, living-comedor al frente, la cocina atrás que da al patio, un baño chico y el lavadero. Arriba, tres cuartos (el nuestro, el de Mica y el de Benja) y un baño en el medio."
             />
             {dictation.supported && (
               <button
