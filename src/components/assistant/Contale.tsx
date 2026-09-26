@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BellRing, CalendarHeart, CarFront, CheckCircle2, ChefHat, Mic, Pencil, ShoppingCart, Sparkles, Square, type LucideIcon } from "lucide-react";
+import { BellRing, CalendarHeart, CarFront, CheckCircle2, ChefHat, Mic, PartyPopper, Pencil, PiggyBank, ShoppingCart, Sparkles, Square, type LucideIcon } from "lucide-react";
 import type { Member } from "@/lib/types";
 import type { Plan, PlanItem, PlanKind } from "@/lib/assistant";
 import { applyPlan, type ApplyResult } from "@/app/actions/assistant";
@@ -20,6 +20,8 @@ const KINDS: Record<PlanKind, { icon: LucideIcon; color: string; label: string; 
   compra: { icon: ShoppingCart, color: "#FF9F43", label: "Compras", href: "/compras", plural: (n) => (n === 1 ? "1 compra" : `${n} compras`) },
   recordatorio: { icon: BellRing, color: "#F59E0B", label: "Vencimiento", href: "/vencimientos", plural: (n) => (n === 1 ? "1 vencimiento" : `${n} vencimientos`) },
   comida: { icon: ChefHat, color: "#0EA5A5", label: "Menú", href: "/menu", plural: (n) => (n === 1 ? "1 comida" : `${n} comidas`) },
+  evento_familiar: { icon: PartyPopper, color: "#FF5A5F", label: "Evento", href: "/eventos", plural: (n) => (n === 1 ? "1 evento" : `${n} eventos`) },
+  presupuesto: { icon: PiggyBank, color: "#EC4899", label: "Tope de gasto", href: "/finanzas", plural: (n) => (n === 1 ? "1 tope" : `${n} topes`) },
 };
 
 const THINKING = ["Leyendo lo que me contaste…", "Ubicando cada cosa en su día…", "Armando la logística…", "Haciendo la lista de compras…", "Ya casi…"];
@@ -39,7 +41,7 @@ export function Contale({ members, today }: { members: Member[]; today: string }
   const [rows, setRows] = useState<Row[]>([]);
   const [editing, setEditing] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [counts, setCounts] = useState<Extract<ApplyResult, { ok: true }>["counts"] | null>(null);
+  const [counts, setCounts] = useState<Extract<ApplyResult, { ok: true }> | null>(null);
   const [tick, setTick] = useState(0);
   const [live, setLive] = useState<Live>({ summary: null, items: [] });
   const dictation = useDictation(text, setText);
@@ -110,7 +112,7 @@ export function Contale({ members, today }: { members: Member[]; today: string }
       setStage("review");
       return;
     }
-    setCounts(res.counts);
+    setCounts(res);
     setText("");
     setStage("done");
     router.refresh();
@@ -118,6 +120,7 @@ export function Contale({ members, today }: { members: Member[]; today: string }
 
   const update = (key: number, patch: Partial<Row>) => setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   const chosenCount = rows.filter((r) => r.on).length;
+  const onlyCreates = rows.filter((r) => r.on).every((r) => r.action === "crear");
 
   return (
     <>
@@ -127,7 +130,7 @@ export function Contale({ members, today }: { members: Member[]; today: string }
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-display text-h2 font-bold text-ink">Contale a Lovebug</span>
-          <span className="block text-meta text-ink-soft">Decime qué tienen hoy o esta semana y lo ordeno: calendario, viajes, tareas y compras.</span>
+          <span className="block text-meta text-ink-soft">Decime qué tienen hoy o esta semana, o qué cambió: lo cargo, lo muevo o lo cancelo.</span>
         </span>
       </button>
 
@@ -135,7 +138,8 @@ export function Contale({ members, today }: { members: Member[]; today: string }
         {stage === "input" && (
           <div className="flex flex-col gap-4">
             <p className="text-body text-ink-soft">
-              Contalo como en un audio: qué tienen, cuándo, quién lleva a quién, qué hay que comprar. Hoy, mañana o la semana que viene.
+              Contalo como en un audio: qué tienen, cuándo, quién lleva a quién, qué hay que comprar. O qué cambió: “pasá la reunión a las 17”, “cancelá lo
+              del domingo”, “ahora somos 30 en el cumple”.
             </p>
             {dictation.supported && (
               <button
@@ -189,7 +193,11 @@ export function Contale({ members, today }: { members: Member[]; today: string }
                   return (
                     <li key={i} className="flex items-center gap-3 px-3 py-2">
                       <K.icon size={16} className="shrink-0" style={{ color: K.color }} />
-                      <span className="min-w-0 flex-1 truncate text-item text-ink">{item.title}</span>
+                      <span className={`min-w-0 flex-1 truncate text-item ${item.action === "cancelar" ? "text-danger line-through" : "text-ink"}`}>
+                        {item.action === "modificar" && <ActionTag className="bg-info-soft text-info">Cambio</ActionTag>}
+                        {item.action === "cancelar" && <ActionTag className="bg-danger/10 text-danger">Cancelar</ActionTag>}
+                        {item.title}
+                      </span>
                       <span className="shrink-0 text-meta text-ink-faint">{item.date ? dayLabel(item.date, today) : ""}</span>
                     </li>
                   );
@@ -253,7 +261,15 @@ export function Contale({ members, today }: { members: Member[]; today: string }
 
             {error && <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
             <button type="button" onClick={save} disabled={stage === "saving" || chosenCount === 0} className="lb-btn disabled:opacity-60">
-              {stage === "saving" ? "Cargando…" : chosenCount === 1 ? "Cargar 1 cosa" : `Cargar ${chosenCount} cosas`}
+              {stage === "saving"
+                ? "Aplicando…"
+                : onlyCreates
+                  ? chosenCount === 1
+                    ? "Cargar 1 cosa"
+                    : `Cargar ${chosenCount} cosas`
+                  : chosenCount === 1
+                    ? "Aplicar 1 cambio"
+                    : `Aplicar ${chosenCount} cambios`}
             </button>
             <button type="button" onClick={() => setStage("input")} disabled={stage === "saving"} className="-mt-2 min-h-10 text-sm font-semibold text-ink-faint">
               Volver a lo que conté
@@ -263,16 +279,26 @@ export function Contale({ members, today }: { members: Member[]; today: string }
 
         {stage === "done" && counts && (
           <div className="flex flex-col gap-4">
-            <p className="text-body text-ink">Ya quedó cargado. Lo ven todos en el hogar.</p>
+            <p className="text-body text-ink">Ya quedó todo al día. Lo ven todos en el hogar.</p>
             <div className="flex flex-wrap gap-2">
-              {(Object.keys(counts) as PlanKind[]).map((k) => {
+              {(Object.keys(counts.created) as PlanKind[]).map((k) => {
                 const K = KINDS[k];
                 return (
                   <Link key={k} href={K.href} onClick={close} className="flex min-h-10 items-center gap-2 rounded-full border-[1.5px] border-line bg-surface px-3 text-sm font-semibold text-ink">
-                    <K.icon size={15} style={{ color: K.color }} /> {K.plural(counts[k] ?? 0)}
+                    <K.icon size={15} style={{ color: K.color }} /> {K.plural(counts.created[k] ?? 0)}
                   </Link>
                 );
               })}
+              {counts.changed > 0 && (
+                <span className="flex min-h-10 items-center gap-2 rounded-full bg-info-soft px-3 text-sm font-semibold text-info">
+                  <Pencil size={14} /> {counts.changed === 1 ? "1 cambio" : `${counts.changed} cambios`}
+                </span>
+              )}
+              {counts.cancelled > 0 && (
+                <span className="flex min-h-10 items-center gap-2 rounded-full bg-danger/10 px-3 text-sm font-semibold text-danger">
+                  {counts.cancelled === 1 ? "1 cancelado" : `${counts.cancelled} cancelados`}
+                </span>
+              )}
             </div>
             <button
               type="button"
@@ -306,20 +332,26 @@ function PlanRow({
   onEdit: () => void;
   onChange: (patch: Partial<Row>) => void;
 }) {
-  const K = KINDS[row.kind];
+  const K = KINDS[row.kind] ?? KINDS.tarea;
+  const cancel = row.action === "cancelar";
+  const change = row.action === "modificar";
   // En un viaje del que solo se sabe la hora de llegada ("llegar 20:00"), la hora que se edita es esa.
   const timeKey: "time" | "end_time" = row.kind === "viaje" && !row.time && row.end_time ? "end_time" : "time";
   const who = members.find((m) => m.id === row.member_id);
   const driver = members.find((m) => m.id === row.driver_id);
-  const meta = [
-    row.time ? (row.end_time ? `${row.time} a ${row.end_time}` : row.time) : row.end_time ? `llegar ${row.end_time}` : null,
-    row.kind === "viaje" ? [row.origin && `desde ${row.origin}`, row.place && `a ${row.place}`].filter(Boolean).join(" ") || null : row.place,
-    row.kind === "viaje" && driver ? `lleva ${driver.nickname ?? driver.name}` : null,
-    who && row.kind !== "compra" ? (row.kind === "viaje" ? `viaja ${who.nickname ?? who.name}` : who.nickname ?? who.name) : null,
-    row.quantity,
-    row.amount ? formatARS(row.amount) : null,
-    row.notes,
-  ].filter(Boolean);
+  const meta = cancel
+    ? []
+    : [
+        change && row.date ? `→ ${formatDay(row.date, "EEE d")}` : null,
+        row.time ? (row.end_time ? `${row.time} a ${row.end_time}` : row.time) : row.end_time ? `llegar ${row.end_time}` : null,
+        row.kind === "viaje" ? [row.origin && `desde ${row.origin}`, row.place && `a ${row.place}`].filter(Boolean).join(" ") || null : row.place,
+        row.kind === "viaje" && driver ? `lleva ${driver.nickname ?? driver.name}` : null,
+        who && row.kind !== "compra" ? (row.kind === "viaje" ? `viaja ${who.nickname ?? who.name}` : who.nickname ?? who.name) : null,
+        row.quantity,
+        row.guests !== null && row.guests !== undefined ? `${row.guests} invitados` : null,
+        row.amount ? (row.kind === "presupuesto" ? `tope ${formatARS(row.amount)}` : formatARS(row.amount)) : null,
+        row.notes,
+      ].filter(Boolean);
 
   return (
     <li className={`px-3 py-2.5 ${row.on ? "" : "opacity-50"}`}>
@@ -328,25 +360,36 @@ function PlanRow({
           type="checkbox"
           checked={row.on}
           onChange={(e) => onChange({ on: e.target.checked })}
-          aria-label={row.on ? "No cargar" : "Cargar"}
+          aria-label={row.on ? "No aplicar" : "Aplicar"}
           className="mt-1 h-5 w-5 shrink-0 accent-coral"
         />
-        <K.icon size={17} className="mt-0.5 shrink-0" style={{ color: K.color }} aria-label={K.label} />
-        <button type="button" onClick={onEdit} className="min-w-0 flex-1 text-left">
-          <span className="block text-item font-medium text-ink">
+        <K.icon size={17} className="mt-0.5 shrink-0" style={{ color: cancel ? "var(--color-danger)" : K.color }} aria-label={K.label} />
+        <button type="button" onClick={cancel ? undefined : onEdit} className="min-w-0 flex-1 text-left">
+          <span className={`block text-item font-medium ${cancel ? "text-danger line-through" : "text-ink"}`}>
+            {change && <ActionTag className="bg-info-soft text-info">Cambio</ActionTag>}
+            {cancel && <ActionTag className="bg-danger/10 text-danger">Cancelar</ActionTag>}
             {row.title}
             {row.suggested && <span className="ml-1.5 rounded-full bg-info-soft px-1.5 py-0.5 align-middle text-[11px] font-semibold text-info">idea</span>}
           </span>
-          {meta.length > 0 && <span className="block text-meta text-ink-faint">{meta.join(" · ")}</span>}
+          {meta.length > 0 && <span className="block text-meta text-ink-soft">{meta.join(" · ")}</span>}
+          {row.target?.label && (
+            <span className="block text-meta text-ink-faint">
+              {cancel ? "Se borra: " : "Antes: "}
+              {row.target.label}
+            </span>
+          )}
         </button>
-        <button type="button" onClick={onEdit} aria-label="Editar" className="flex h-8 w-8 shrink-0 items-center justify-center text-ink-ghost">
-          <Pencil size={14} />
-        </button>
+        {!cancel && (
+          <button type="button" onClick={onEdit} aria-label="Editar" className="flex h-8 w-8 shrink-0 items-center justify-center text-ink-ghost">
+            <Pencil size={14} />
+          </button>
+        )}
       </div>
-      {editing && (
+      {editing && !cancel && (
         <div className="mt-2 flex flex-col gap-2 pl-8">
+          {change && <p className="text-meta text-ink-faint">Lo que dejes vacío queda como estaba.</p>}
           <Input value={row.title} onChange={(e) => onChange({ title: e.target.value })} aria-label="Título" />
-          {row.kind !== "compra" && (
+          {row.kind !== "compra" && row.kind !== "presupuesto" && (
             <div className="flex gap-2">
               <Input type="date" value={row.date ?? ""} onChange={(e) => onChange({ date: e.target.value || null })} aria-label="Día" className="min-w-0 flex-1" />
               {row.kind !== "recordatorio" && row.kind !== "comida" && (
@@ -365,15 +408,29 @@ function PlanRow({
               <MemberSelect members={members.filter((m) => !m.is_child)} noneLabel="Sin definir" value={row.driver_id ?? ""} onChange={(e) => onChange({ driver_id: e.target.value || null })} aria-label="Quién lleva" />
             </EditLine>
           )}
-          {row.kind !== "compra" && (
+          {row.kind !== "compra" && row.kind !== "presupuesto" && row.kind !== "evento_familiar" && (
             <EditLine label={row.kind === "viaje" ? "Viaja" : "De"}>
               <MemberSelect members={members} noneLabel={row.kind === "viaje" ? "Nadie de casa" : "Todos"} value={row.member_id ?? ""} onChange={(e) => onChange({ member_id: e.target.value || null })} aria-label={row.kind === "viaje" ? "Quién viaja" : "De quién"} />
+            </EditLine>
+          )}
+          {row.kind === "evento_familiar" && (
+            <EditLine label="Invit.">
+              <Input type="number" inputMode="numeric" min={0} value={row.guests ?? ""} onChange={(e) => onChange({ guests: e.target.value === "" ? null : Math.max(0, Math.round(Number(e.target.value))) })} aria-label="Invitados" />
+            </EditLine>
+          )}
+          {(row.kind === "recordatorio" || row.kind === "presupuesto" || row.kind === "evento_familiar") && (
+            <EditLine label="$">
+              <Input type="number" inputMode="numeric" min={0} value={row.amount ?? ""} onChange={(e) => onChange({ amount: e.target.value === "" ? null : Math.max(0, Math.round(Number(e.target.value))) })} aria-label={row.kind === "presupuesto" ? "Tope mensual" : row.kind === "evento_familiar" ? "Presupuesto" : "Monto"} />
             </EditLine>
           )}
         </div>
       )}
     </li>
   );
+}
+
+function ActionTag({ className, children }: { className: string; children: ReactNode }) {
+  return <span className={`mr-1.5 inline-block rounded-full px-1.5 py-0.5 align-middle text-[11px] font-bold uppercase tracking-wide ${className}`}>{children}</span>;
 }
 
 function EditLine({ label, children }: { label: string; children: ReactNode }) {
@@ -391,17 +448,24 @@ function dayLabel(date: string, today: string, pattern = "EEE d"): string {
   return formatDay(date, pattern);
 }
 
+// Primero lo que cambia o se cancela de lo que ya estaba; después lo nuevo, día por día.
 function groupByDay(rows: Row[], today: string) {
   const groups = new Map<string, Row[]>();
   for (const r of rows) {
-    const key = r.kind === "compra" ? "~compras" : r.date ?? "~sinfecha";
+    const key = r.action !== "crear" ? "!cambios" : r.kind === "compra" ? "~compras" : r.kind === "presupuesto" ? "~topes" : r.date ?? "~sinfecha";
     groups.set(key, [...(groups.get(key) ?? []), r]);
   }
+  const labels: Record<string, string> = {
+    "!cambios": "Cambios en lo que ya tenían",
+    "~compras": "Para comprar",
+    "~topes": "Topes de gasto",
+    "~sinfecha": "Sin fecha (va para hoy)",
+  };
   return [...groups.entries()]
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)) // fechas en orden; "~sinfecha" y "~compras" al final
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)) // "!cambios" primero, fechas en orden, los "~" al final
     .map(([key, list]) => ({
       key,
-      label: key === "~compras" ? "Para comprar" : key === "~sinfecha" ? "Sin fecha (va para hoy)" : dayLabel(key, today, "EEEE d 'de' MMMM"),
+      label: labels[key] ?? dayLabel(key, today, "EEEE d 'de' MMMM"),
       rows: list.sort((a, b) => (a.time ?? a.end_time ?? "99").localeCompare(b.time ?? b.end_time ?? "99")),
     }));
 }
