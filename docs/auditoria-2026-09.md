@@ -59,15 +59,18 @@ tamaño de botones. Además se revisaron el build, las dependencias y los endpoi
 - Círculo: foto al agregar a alguien nuevo (antes solo al editar), de la cámara o la galería.
 - Hoy: el título decía "Sábado, 26 De Septiembre" (mayúscula en "De").
 
+**Hecho después de la auditoría**
+- **Huella nativa**: app Android (Capacitor, carpeta `mobile/`) con el cartel de huella del propio
+  celu, como Mercado Pago. GitHub Actions compila el APK y lo publica en `/lovebug-android.apk`;
+  en Ajustes aparece "Descargar la app" desde Android. En iPhone sigue la passkey (Face ID).
+- **Primeros pasos** en Hoy para hogares nuevos: sumar integrantes, cumples, invitar, huella y
+  avisos. Cada paso se tilda solo.
+- **Deshacer** durante 6 segundos después de borrar, y "Deshacer todo" al aplicar Contale.
+
 **Recomendado**
-1. **Huella nativa**: en el navegador, Android muestra la huella a través del administrador de
-   contraseñas de Google (por eso se ve "de Google"). Para el cartel propio del celular, como
-   Mercado Pago, hace falta empaquetar Lovebug como app nativa (Capacitor). Es un proyecto aparte
-   de 1 o 2 semanas que además habilita publicar en las tiendas.
-2. Una lista de "Primeros pasos" en Hoy para hogares nuevos: sumar integrantes, invitar a la
-   pareja, activar avisos y cargar cumples.
-3. "Deshacer" (5 segundos) después de borrar o de aplicar Contale, en vez de confirmaciones.
-4. Estados vacíos con un botón concreto ("Cargar el primer gasto") además del "Tocá +".
+1. Estados vacíos con un botón concreto ("Cargar el primer gasto") además del "Tocá +".
+2. Avisos en la app Android: hoy llegan por la web instalada; para que lleguen a la app hace falta
+   Firebase Cloud Messaging (un proyecto de Firebase y su `google-services.json`).
 
 ## UI
 
