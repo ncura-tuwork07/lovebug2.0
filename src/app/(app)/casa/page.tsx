@@ -4,6 +4,8 @@ import { getSessionContext } from "@/lib/data";
 import { isAppAdmin } from "@/lib/admin";
 import type { Presence, Room } from "@/lib/home";
 import { HomePlan } from "@/components/modules/HomePlan";
+import { HomeSetup } from "@/components/modules/HomeSetup";
+import { HOME_MIGRATION_SQL, supabaseSqlEditorUrl } from "@/lib/homeMigration";
 
 export const dynamic = "force-dynamic";
 
@@ -29,14 +31,14 @@ export default async function CasaPage() {
         <h1 className="text-h1 font-display font-bold text-ink">Casa</h1>
       </header>
       {missing ? (
-        <section className="lb-card flex flex-col gap-2">
-          <p className="text-item font-medium text-ink">El plano de la casa está casi listo 🏡</p>
-          <p className="text-meta text-ink-faint">
-            {admin
-              ? "Falta crear sus tablas: corré supabase/migrations/014_plano_de_la_casa.sql en el SQL Editor de Supabase y recargá."
-              : "Estamos terminando de prepararlo. Probá de nuevo en un rato."}
-          </p>
-        </section>
+        admin ? (
+          <HomeSetup sql={HOME_MIGRATION_SQL} editorUrl={supabaseSqlEditorUrl()} />
+        ) : (
+          <section className="lb-card flex flex-col gap-2">
+            <p className="text-item font-medium text-ink">El plano de la casa está casi listo 🏡</p>
+            <p className="text-meta text-ink-faint">Estamos terminando de prepararlo. Probá de nuevo en un rato.</p>
+          </section>
+        )
       ) : (
         <HomePlan rooms={(roomsRes.data ?? []) as Room[]} presence={(presenceRes.data ?? []) as Presence[]} members={members} myId={me?.id ?? null} />
       )}
