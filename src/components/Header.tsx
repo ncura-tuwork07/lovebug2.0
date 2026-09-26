@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useTransition } from "react";
-import { Mic, Settings, Users } from "lucide-react";
+import { Mic, Settings } from "lucide-react";
+import { AlertsBell } from "@/components/AlertsBell";
 import { useContale } from "@/components/assistant/Contale";
 import { clearProfile } from "@/app/actions/session";
 import { useHousehold } from "@/components/HouseholdProvider";
@@ -40,15 +41,7 @@ export function Header() {
           </button>
         )}
         <ThemeToggle />
-        <Link
-          href="/familia"
-          aria-label="Familia"
-          className={`flex h-11 w-11 items-center justify-center rounded-full ${
-            pathname.startsWith("/familia") ? "text-coral" : "text-ink-ghost"
-          }`}
-        >
-          <Users size={18} />
-        </Link>
+        <AlertsBell />
         <Link
           href="/ajustes"
           aria-label="Ajustes"
