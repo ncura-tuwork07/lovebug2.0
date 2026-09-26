@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { FALLBACK_ROLE } from "@/lib/roles";
 import type { DocumentKind } from "@/lib/types";
 
 function revalidate(id: string) {
@@ -33,7 +34,7 @@ export async function updateProfile(input: ProfileInput) {
   const clean = (v: string | null) => v?.trim() || null;
   const row = {
     name: input.name.trim(),
-    role: input.role.trim() || "Adulto/a",
+    role: input.role.trim() || FALLBACK_ROLE,
     is_child: input.is_child,
     nickname: clean(input.nickname),
     birthday: input.birthday || null,

@@ -6,6 +6,7 @@ import type { ReminderCategory } from "@/lib/types";
 
 function revalidate() {
   revalidatePath("/vencimientos");
+  revalidatePath("/calendario");
   revalidatePath("/");
 }
 

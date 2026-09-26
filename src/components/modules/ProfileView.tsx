@@ -6,11 +6,11 @@ import { Camera, FileText, MapPin, Paperclip, Trash2, Upload } from "lucide-reac
 import type { DocumentKind, FamilyDocument, Member } from "@/lib/types";
 import { addDocument, deleteDocument, setPhoto, setShareLocation, updateProfile } from "@/app/actions/profile";
 import { createClient } from "@/lib/supabase/client";
-import { BoolToggle, Field, Input, Select, SubmitRow, Textarea } from "@/components/ui/Field";
+import { BoolToggle, Field, Input, RolePicker, Select, SubmitRow, Textarea } from "@/components/ui/Field";
 import { MemberAvatar } from "@/components/ui/MemberChip";
 import { fd } from "@/components/ui/useSheet";
-import { formatDay } from "@/lib/format";
-import { ROLE_SUGGESTIONS } from "@/lib/roles";
+import { formatDay, todayAR } from "@/lib/format";
+import { isMinor, ROLE_SUGGESTIONS, shownRole } from "@/lib/roles";
 
 export const DOC_KINDS: Record<DocumentKind, string> = {
   dni: "DNI",
@@ -36,6 +36,7 @@ export function ProfileView({
 }) {
   const router = useRouter();
   const [color, setColor] = useState(member.color);
+  const [isChild, setIsChild] = useState(member.is_child);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -192,30 +193,33 @@ export function ProfileView({
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Rol" hint="Mamá, papá, hijo, abuela… no tiene que ver con la edad.">
-            <Input name="role" list="lb-roles" defaultValue={member.role} maxLength={30} />
-            <datalist id="lb-roles">
-              {ROLE_SUGGESTIONS.map((r) => (
-                <option key={r} value={r} />
-              ))}
-            </datalist>
+          <Field label="Qué es en la familia">
+            <RolePicker name="role" options={ROLE_SUGGESTIONS} defaultValue={shownRole(member.role)} required />
           </Field>
-          <Field label="Edad" hint="Menor: suma puntos y premios; no aparece en finanzas ni horóscopo.">
-            <BoolToggle name="is_child" defaultValue={member.is_child} falseLabel="Adulto/a" trueLabel="Menor" />
+          <Field label="Cumpleaños">
+            <Input
+              name="birthday"
+              type="date"
+              defaultValue={member.birthday ?? ""}
+              onChange={(e) => {
+                const minor = isMinor(e.target.value, todayAR());
+                if (minor !== null) setIsChild(minor);
+              }}
+            />
           </Field>
         </div>
+        <Field group label="¿Es menor de edad?" hint="Los menores suman puntos y premios, y no aparecen en finanzas ni en el horóscopo.">
+          <BoolToggle name="is_child" value={isChild} onChange={setIsChild} falseLabel="No" trueLabel="Sí, es menor" />
+        </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Cumpleaños">
-            <Input name="birthday" type="date" defaultValue={member.birthday ?? ""} />
-          </Field>
           <Field label="DNI">
             <Input name="dni" inputMode="numeric" defaultValue={member.dni ?? ""} />
           </Field>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
           <Field label="Teléfono">
             <Input name="phone" type="tel" defaultValue={member.phone ?? ""} />
           </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
           <Field label="Grupo sanguíneo">
             <Select name="blood_type" defaultValue={member.blood_type ?? ""}>
               <option value="">—</option>
@@ -226,10 +230,10 @@ export function ProfileView({
               ))}
             </Select>
           </Field>
+          <Field label="Alergias / medicación">
+            <Input name="allergies" defaultValue={member.allergies ?? ""} placeholder="Ninguna" />
+          </Field>
         </div>
-        <Field label="Alergias / medicación">
-          <Input name="allergies" defaultValue={member.allergies ?? ""} placeholder="Ninguna" />
-        </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Colegio / trabajo">
             <Input name="school" defaultValue={member.school ?? ""} />
@@ -241,7 +245,7 @@ export function ProfileView({
         <Field label="Notas (talles, gustos, lo que haga falta)">
           <Textarea name="notes" rows={3} defaultValue={member.notes ?? ""} />
         </Field>
-        <Field label="Color en la app">
+        <Field group label="Color en la app">
           <div className="flex flex-wrap gap-2">
             {PALETTE.map((c) => (
               <button

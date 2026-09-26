@@ -7,6 +7,7 @@ function revalidate() {
   revalidatePath("/circulo");
   revalidatePath("/eventos");
   revalidatePath("/vencimientos");
+  revalidatePath("/calendario");
   revalidatePath("/");
 }
 
@@ -21,7 +22,8 @@ export type ContactInput = {
   is_child: boolean;
 };
 
-export async function saveContact(input: ContactInput): Promise<void> {
+// Devuelve el id (para subirle la foto a alguien recién agregado).
+export async function saveContact(input: ContactInput): Promise<string> {
   const supabase = await createClient();
   const name = input.name.trim();
   if (!name) throw new Error("Falta el nombre.");
@@ -38,11 +40,12 @@ export async function saveContact(input: ContactInput): Promise<void> {
     const { error } = await supabase.from("contacts").update(row).eq("id", input.id);
     if (error) throw new Error(error.message);
     revalidate();
-    return;
+    return input.id;
   }
-  const { error } = await supabase.from("contacts").insert(row);
+  const { data, error } = await supabase.from("contacts").insert(row).select("id").single();
   if (error) throw new Error(error.message);
   revalidate();
+  return data.id as string;
 }
 
 // Crea contactos nuevos a partir de nombres sueltos (ej. invitados de un evento sin cuenta ni contacto).

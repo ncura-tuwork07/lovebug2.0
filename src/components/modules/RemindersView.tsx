@@ -2,22 +2,14 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { BellRing, Cake, CheckCircle2, Circle, Gift, Heart, Star } from "lucide-react";
-import type { Contact, ImportantDate, Member, Reminder, ReminderCategory } from "@/lib/types";
-import {
-  completeReminder,
-  deleteImportantDate,
-  deleteReminder,
-  reopenReminder,
-  saveImportantDate,
-  saveReminder,
-} from "@/app/actions/reminders";
+import { BellRing, CheckCircle2, Circle } from "lucide-react";
+import type { Member, Reminder, ReminderCategory } from "@/lib/types";
+import { completeReminder, deleteReminder, reopenReminder, saveReminder } from "@/app/actions/reminders";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Fab } from "@/components/ui/Fab";
 import { Field, Input, MemberSelect, Select, SubmitRow, Textarea } from "@/components/ui/Field";
 import { MemberChip, memberById } from "@/components/ui/MemberChip";
 import { fd, useSheet } from "@/components/ui/useSheet";
-import { daysUntilLabel, upcomingDates, type Upcoming } from "@/lib/dates";
 import { formatARS, formatDay, todayAR } from "@/lib/format";
 
 export const REMINDER_CATEGORIES: Record<ReminderCategory, string> = {
@@ -31,29 +23,20 @@ export const REMINDER_CATEGORIES: Record<ReminderCategory, string> = {
   otro: "Otro",
 };
 
-const KIND_ICON = { cumple: Cake, aniversario: Heart, otro: Star };
-
+// Cumples y fechas importantes viven en el Calendario (pestaña "Fechas importantes").
 export function RemindersView({
   reminders,
-  dates,
   members,
-  contacts = [],
   currentMemberId,
 }: {
   reminders: Reminder[];
-  dates: ImportantDate[];
   members: Member[];
-  contacts?: Contact[];
   currentMemberId: string | null;
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"vencimientos" | "fechas">("vencimientos");
   const [showDone, setShowDone] = useState(false);
   const remSheet = useSheet<Reminder>();
-  const dateSheet = useSheet<Upcoming>();
   const today = todayAR();
-
-  const upcoming = upcomingDates(today, dates, members, contacts);
 
   function submitReminder(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -74,150 +57,61 @@ export function RemindersView({
     );
   }
 
-  function submitDate(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const f = fd(e.currentTarget);
-    const editing = dateSheet.editing?.source === "date" ? dateSheet.editing : null;
-    dateSheet.run(() =>
-      saveImportantDate({
-        id: editing?.id,
-        title: f.str("title"),
-        date: f.str("date"),
-        kind: f.str("kind") as "cumple" | "aniversario" | "otro",
-        member_id: f.opt("member_id"),
-        remind_days_before: f.num("remind_days_before"),
-        gift_ideas: f.opt("gift_ideas"),
-      })
-    );
-  }
-
   const open = reminders.filter((r) => !r.done).sort((a, b) => a.due_date.localeCompare(b.due_date));
   const done = reminders.filter((r) => r.done);
 
-  const editingDate = dateSheet.editing
-    ? dates.find((d) => d.id === dateSheet.editing!.id) ?? null
-    : null;
-  const editingDateValue = editingDate
-    ? `${editingDate.year ?? today.slice(0, 4)}-${String(editingDate.month).padStart(2, "0")}-${String(editingDate.day).padStart(2, "0")}`
-    : today;
-
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex rounded-md bg-line/60 p-1">
-        {(["vencimientos", "fechas"] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setTab(t)}
-            className={`min-h-10 flex-1 rounded-sm text-sm font-semibold transition-colors ${
-              tab === t ? "bg-surface text-ink shadow-soft" : "text-ink-faint"
-            }`}
-          >
-            {t === "vencimientos" ? "Vencimientos" : "Fechas importantes"}
-          </button>
-        ))}
-      </div>
-
-      {tab === "vencimientos" && (
-        <>
-          {open.length === 0 && (
-            <p className="font-accent text-2xl text-ink-faint">Nada por vencer. Tocá + para cargar el seguro, la luz, la VTV…</p>
-          )}
-          <ul className="flex flex-col gap-2">
-            {(showDone ? [...open, ...done] : open).map((r) => {
-              const days = Math.round((Date.parse(r.due_date) - Date.parse(today)) / 86400000);
-              const overdue = !r.done && days < 0;
-              const soon = !r.done && days >= 0 && days <= r.notify_days_before;
-              return (
-                <li key={r.id} className={`lb-card flex items-center gap-2 !p-3 ${r.done ? "opacity-60" : ""}`}>
-                  <button
-                    type="button"
-                    aria-label={r.done ? "Reabrir" : "Marcar pagado"}
-                    onClick={async () => {
-                      await (r.done ? reopenReminder(r.id) : completeReminder(r.id));
-                      router.refresh();
-                    }}
-                    className="flex h-11 w-9 shrink-0 items-center justify-center"
-                  >
-                    {r.done ? <CheckCircle2 size={22} className="text-success" /> : <Circle size={22} className="text-line" />}
-                  </button>
-                  <button type="button" onClick={() => remSheet.openEdit(r)} className="min-w-0 flex-1 text-left">
-                    <p className={`text-item font-medium text-ink ${r.done ? "line-through" : ""}`}>{r.title}</p>
-                    <p className="text-meta text-ink-faint">
-                      {REMINDER_CATEGORIES[r.category]} · {formatDay(r.due_date, "d MMM")}
-                      {r.repeat !== "none" ? (r.repeat === "monthly" ? " · mensual" : " · anual") : ""}
-                      {r.repeat_until ? ` hasta ${formatDay(r.repeat_until, "MMM yyyy")}` : ""}
-                    </p>
-                  </button>
-                  <div className="flex shrink-0 flex-col items-end gap-1">
-                    <span
-                      className={`text-sm font-semibold ${
-                        overdue ? "text-danger" : soon ? "text-amber" : "text-ink-faint"
-                      }`}
-                    >
-                      {r.done ? "Listo" : overdue ? `Venció hace ${-days} d` : days === 0 ? "Vence hoy" : `${days} d`}
-                    </span>
-                    {r.amount != null && <span className="text-meta text-ink-faint">{formatARS(Number(r.amount))}</span>}
-                    {r.member_id && <MemberChip member={memberById(members, r.member_id)} />}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-          {done.length > 0 && (
-            <button type="button" onClick={() => setShowDone((v) => !v)} className="min-h-11 text-sm font-semibold text-ink-faint">
-              {showDone ? "Ocultar" : "Ver"} {done.length} pagado{done.length === 1 ? "" : "s"}
-            </button>
-          )}
-          <Fab onClick={remSheet.openNew} label="Nuevo vencimiento" />
-        </>
+      {open.length === 0 && (
+        <p className="font-accent text-2xl text-ink-faint">Nada por vencer. Tocá + para cargar el seguro, la luz, la VTV…</p>
       )}
-
-      {tab === "fechas" && (
-        <>
-          {upcoming.length === 0 && (
-            <p className="font-accent text-2xl text-ink-faint">Cargá cumpleaños, el aniversario, y avisamos con tiempo para el regalo.</p>
-          )}
-          <ul className="flex flex-col gap-2">
-            {upcoming.map((u) => {
-              const Icon = KIND_ICON[u.kind];
-              const member = memberById(members, u.member_id);
-              return (
-                <li key={u.id}>
-                  <button
-                    type="button"
-                    onClick={() => dateSheet.openEdit(u)}
-                    className="lb-card flex w-full items-center gap-3 !p-3 text-left"
-                    disabled={u.source === "member"}
-                  >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-coral-soft text-coral">
-                      <Icon size={18} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-item font-medium text-ink">
-                        {u.title}
-                        {u.turns != null && u.kind !== "otro" ? ` · ${u.turns} ${u.kind === "cumple" ? "años" : "años juntos"}` : ""}
-                      </p>
-                      <p className="text-meta text-ink-faint">
-                        {formatDay(u.next, "EEEE d 'de' MMMM")}
-                        {u.gift_ideas ? ` · 🎁 ${u.gift_ideas}` : ""}
-                        {u.source === "member" ? " · desde el perfil" : ""}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className={`text-sm font-semibold ${u.daysUntil <= u.remind_days_before ? "text-coral" : "text-ink-faint"}`}>
-                        {daysUntilLabel(u.daysUntil)}
-                      </span>
-                      {member && <MemberChip member={member} />}
-                    </div>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          <Fab onClick={dateSheet.openNew} label="Nueva fecha" />
-        </>
+      <ul className="flex flex-col gap-2">
+        {(showDone ? [...open, ...done] : open).map((r) => {
+          const days = Math.round((Date.parse(r.due_date) - Date.parse(today)) / 86400000);
+          const overdue = !r.done && days < 0;
+          const soon = !r.done && days >= 0 && days <= r.notify_days_before;
+          return (
+            <li key={r.id} className={`lb-card flex items-center gap-2 !p-3 ${r.done ? "opacity-60" : ""}`}>
+              <button
+                type="button"
+                aria-label={r.done ? "Reabrir" : "Marcar pagado"}
+                onClick={async () => {
+                  await (r.done ? reopenReminder(r.id) : completeReminder(r.id));
+                  router.refresh();
+                }}
+                className="flex h-11 w-9 shrink-0 items-center justify-center"
+              >
+                {r.done ? <CheckCircle2 size={22} className="text-success" /> : <Circle size={22} className="text-line" />}
+              </button>
+              <button type="button" onClick={() => remSheet.openEdit(r)} className="min-w-0 flex-1 text-left">
+                <p className={`text-item font-medium text-ink ${r.done ? "line-through" : ""}`}>{r.title}</p>
+                <p className="text-meta text-ink-faint">
+                  {REMINDER_CATEGORIES[r.category]} · {formatDay(r.due_date, "d MMM")}
+                  {r.repeat !== "none" ? (r.repeat === "monthly" ? " · mensual" : " · anual") : ""}
+                  {r.repeat_until ? ` hasta ${formatDay(r.repeat_until, "MMM yyyy")}` : ""}
+                </p>
+              </button>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <span
+                  className={`text-sm font-semibold ${
+                    overdue ? "text-danger" : soon ? "text-amber" : "text-ink-faint"
+                  }`}
+                >
+                  {r.done ? "Listo" : overdue ? `Venció hace ${-days} d` : days === 0 ? "Vence hoy" : `${days} d`}
+                </span>
+                {r.amount != null && <span className="text-meta text-ink-faint">{formatARS(Number(r.amount))}</span>}
+                {r.member_id && <MemberChip member={memberById(members, r.member_id)} />}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      {done.length > 0 && (
+        <button type="button" onClick={() => setShowDone((v) => !v)} className="min-h-11 text-sm font-semibold text-ink-faint">
+          {showDone ? "Ocultar" : "Ver"} {done.length} pagado{done.length === 1 ? "" : "s"}
+        </button>
       )}
+      <Fab onClick={remSheet.openNew} label="Nuevo vencimiento" />
 
       {/* Sheet vencimiento */}
       <BottomSheet open={remSheet.open} onClose={remSheet.close} title={remSheet.editing ? "Editar vencimiento" : "Nuevo vencimiento"}>
@@ -276,49 +170,8 @@ export function RemindersView({
         </form>
       </BottomSheet>
 
-      {/* Sheet fecha importante */}
-      <BottomSheet open={dateSheet.open} onClose={dateSheet.close} title={editingDate ? "Editar fecha" : "Nueva fecha importante"}>
-        <form onSubmit={submitDate} className="flex flex-col gap-4">
-          <Field label="Qué se celebra">
-            <Input name="title" required autoFocus defaultValue={editingDate?.title ?? ""} placeholder="Aniversario, cumple de la abuela…" />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Fecha" hint="El año es para calcular cuántos cumple.">
-              <Input name="date" type="date" required defaultValue={editingDateValue} />
-            </Field>
-            <Field label="Tipo">
-              <Select name="kind" defaultValue={editingDate?.kind ?? "cumple"}>
-                <option value="cumple">Cumpleaños</option>
-                <option value="aniversario">Aniversario</option>
-                <option value="otro">Otro</option>
-              </Select>
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="De quién">
-              <MemberSelect name="member_id" members={members} noneLabel="Alguien más" defaultValue={editingDate?.member_id ?? ""} />
-            </Field>
-            <Field label="Avisar con">
-              <Select name="remind_days_before" defaultValue={String(editingDate?.remind_days_before ?? 7)}>
-                {[1, 3, 7, 14, 30].map((n) => (
-                  <option key={n} value={n}>
-                    {n} día{n === 1 ? "" : "s"} antes
-                  </option>
-                ))}
-              </Select>
-            </Field>
-          </div>
-          <Field label="Ideas de regalo (opcional)">
-            <Textarea name="gift_ideas" defaultValue={editingDate?.gift_ideas ?? ""} />
-          </Field>
-          {dateSheet.error && <p className="text-sm text-danger">{dateSheet.error}</p>}
-          <SubmitRow saving={dateSheet.saving} onDelete={editingDate ? () => dateSheet.run(() => deleteImportantDate(editingDate.id)) : undefined} />
-        </form>
-      </BottomSheet>
-
       <p className="flex items-center gap-2 text-meta text-ink-faint">
-        <BellRing size={12} /> Con los avisos activados (en Más), te llega una notificación cuando algo se acerca.
-        <Gift size={12} className="ml-auto" />
+        <BellRing size={12} className="shrink-0" /> Con los avisos activados (en Más), te llega una notificación cuando algo se acerca.
       </p>
     </div>
   );

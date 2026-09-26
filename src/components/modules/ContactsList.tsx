@@ -8,23 +8,48 @@ import { archiveContact, saveContact, setContactPhoto } from "@/app/actions/cont
 import { createClient } from "@/lib/supabase/client";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Fab } from "@/components/ui/Fab";
-import { Field, Input, SubmitRow, Textarea } from "@/components/ui/Field";
+import { BoolToggle, Field, Input, RolePicker, SubmitRow, Textarea } from "@/components/ui/Field";
 import { fd, useSheet } from "@/components/ui/useSheet";
-import { formatDay } from "@/lib/format";
-import { CIRCLE_SUGGESTIONS } from "@/lib/roles";
+import { formatDay, todayAR } from "@/lib/format";
+import { CIRCLE_SUGGESTIONS, isMinor } from "@/lib/roles";
 
 export function ContactsList({ contacts, householdId }: { contacts: Contact[]; householdId: string }) {
   const router = useRouter();
   const sheet = useSheet<Contact>();
   const [uploading, setUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null); // de alguien nuevo: se sube al guardar
+  const [isChild, setIsChild] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const photoInput = useRef<HTMLInputElement>(null);
+
+  function openSheet(c: Contact | null) {
+    setNotice(null);
+    setPreview(c?.photo_url ?? null);
+    setPendingPhoto(null);
+    setPhotoError(null);
+    setIsChild(c?.is_child ?? false);
+    if (c) sheet.openEdit(c);
+    else sheet.openNew();
+  }
+
+  async function uploadPhoto(contactId: string, file: File): Promise<string> {
+    const supabase = createClient();
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${householdId}/circulo/${contactId}/avatar-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) throw new Error(upErr.message);
+    const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+    await setContactPhoto(contactId, data.publicUrl);
+    return data.publicUrl;
+  }
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = fd(e.currentTarget);
-    sheet.run(() =>
-      saveContact({
+    sheet.run(async () => {
+      const id = await saveContact({
         id: sheet.editing?.id,
         name: f.str("name"),
         relationship: f.opt("relationship"),
@@ -33,22 +58,26 @@ export function ContactsList({ contacts, householdId }: { contacts: Contact[]; h
         email: f.opt("email"),
         notes: f.opt("notes"),
         is_child: f.bool("is_child"),
-      })
-    );
+      });
+      if (pendingPhoto) {
+        // La persona ya quedó guardada: si la foto falla no dejamos el form abierto (se duplicaría).
+        await uploadPhoto(id, pendingPhoto).catch(() => setNotice("Quedó guardada, pero la foto no se pudo subir. Entrá a su ficha y probá de nuevo."));
+      }
+    });
   }
 
+  // Cámara o galería (sin `capture`, así el celu ofrece las dos). A alguien que ya está se le sube
+  // en el momento; a alguien nuevo se le muestra y se sube cuando se guarda.
   async function onPhoto(file: File) {
-    if (!sheet.editing) return;
-    setUploading(true);
     setPhotoError(null);
+    if (!sheet.editing) {
+      setPendingPhoto(file);
+      setPreview(URL.createObjectURL(file));
+      return;
+    }
+    setUploading(true);
     try {
-      const supabase = createClient();
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${householdId}/circulo/${sheet.editing.id}/avatar-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
-      if (upErr) throw new Error(upErr.message);
-      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-      await setContactPhoto(sheet.editing.id, data.publicUrl);
+      setPreview(await uploadPhoto(sheet.editing.id, file));
       router.refresh();
     } catch (err) {
       setPhotoError(err instanceof Error ? err.message : "No pudimos subir la foto.");
@@ -59,6 +88,7 @@ export function ContactsList({ contacts, householdId }: { contacts: Contact[]; h
 
   return (
     <>
+      {notice && <p className="rounded-md bg-amber-soft px-3 py-2 text-sm text-ink">{notice}</p>}
       <ul className="flex flex-col gap-2">
         {contacts.length === 0 && (
           <p className="font-accent text-2xl text-ink-faint">
@@ -67,7 +97,7 @@ export function ContactsList({ contacts, householdId }: { contacts: Contact[]; h
         )}
         {contacts.map((c) => (
           <li key={c.id}>
-            <button type="button" onClick={() => sheet.openEdit(c)} className="lb-card flex w-full items-center gap-3 !p-3 text-left">
+            <button type="button" onClick={() => openSheet(c)} className="lb-card flex w-full items-center gap-3 !p-3 text-left">
               {c.photo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={c.photo_url} alt={c.name} className="h-11 w-11 shrink-0 rounded-full object-cover" />
@@ -92,53 +122,58 @@ export function ContactsList({ contacts, householdId }: { contacts: Contact[]; h
         ))}
       </ul>
 
-      <Fab onClick={sheet.openNew} label="Agregar al círculo" />
+      <Fab onClick={() => openSheet(null)} label="Agregar al círculo" />
 
       <BottomSheet open={sheet.open} onClose={sheet.close} title={sheet.editing ? sheet.editing.name : "Nueva persona"}>
-        {sheet.editing && (
-          <div className="mb-4 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => photoInput.current?.click()}
-              disabled={uploading}
-              className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-info-soft"
-            >
-              {sheet.editing.photo_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={sheet.editing.photo_url} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <Camera size={20} className="text-info" />
-              )}
-            </button>
-            <input
-              ref={photoInput}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) onPhoto(file);
-              }}
-            />
-            <p className="text-meta text-ink-faint">{uploading ? "Subiendo foto…" : "Tocá para poner o cambiar la foto"}</p>
-          </div>
-        )}
+        <div className="mb-4 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => photoInput.current?.click()}
+            disabled={uploading}
+            aria-label="Elegir foto"
+            className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-info-soft"
+          >
+            {preview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={preview} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <Camera size={20} className="text-info" />
+            )}
+          </button>
+          <input
+            ref={photoInput}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) onPhoto(file);
+            }}
+          />
+          <p className="text-meta text-ink-faint">
+            {uploading ? "Subiendo foto…" : preview ? "Tocá la foto para cambiarla" : "Tocá para ponerle una foto (de la cámara o la galería)"}
+          </p>
+        </div>
         {photoError && <p className="mb-2 text-sm text-danger">{photoError}</p>}
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <Field label="Nombre">
             <Input name="name" required autoFocus={!sheet.editing} defaultValue={sheet.editing?.name ?? ""} placeholder="Tía Karen, Brian…" />
           </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Relación" hint="Tía, amigo, lo que sea.">
-              <Input name="relationship" list="lb-circle-relationship" defaultValue={sheet.editing?.relationship ?? ""} maxLength={30} />
-              <datalist id="lb-circle-relationship">
-                {CIRCLE_SUGGESTIONS.map((r) => (
-                  <option key={r} value={r} />
-                ))}
-              </datalist>
+            <Field label="Qué es de ustedes">
+              <RolePicker key={sheet.editing?.id ?? "new"} name="relationship" options={CIRCLE_SUGGESTIONS} defaultValue={sheet.editing?.relationship ?? ""} placeholder="Sin especificar" />
             </Field>
             <Field label="Cumpleaños">
-              <Input name="birthday" type="date" defaultValue={sheet.editing?.birthday ?? ""} />
+              <Input
+                name="birthday"
+                type="date"
+                defaultValue={sheet.editing?.birthday ?? ""}
+                onChange={(e) => {
+                  const minor = isMinor(e.target.value, todayAR());
+                  if (minor !== null) setIsChild(minor);
+                }}
+              />
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -149,10 +184,9 @@ export function ContactsList({ contacts, householdId }: { contacts: Contact[]; h
               <Input name="email" type="email" defaultValue={sheet.editing?.email ?? ""} />
             </Field>
           </div>
-          <label className="flex items-center gap-3">
-            <input type="checkbox" name="is_child" defaultChecked={sheet.editing?.is_child ?? false} className="h-5 w-5 accent-coral" />
-            <span className="text-item text-ink">Es menor</span>
-          </label>
+          <Field group label="¿Es menor de edad?" hint="Con el cumple se marca solo.">
+            <BoolToggle name="is_child" value={isChild} onChange={setIsChild} falseLabel="No" trueLabel="Sí, es menor" />
+          </Field>
           <Field label="Notas" hint="Alergias, ideas de regalo, lo que haga falta.">
             <Textarea name="notes" defaultValue={sheet.editing?.notes ?? ""} rows={2} />
           </Field>

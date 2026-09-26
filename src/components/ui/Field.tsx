@@ -3,14 +3,24 @@
 import { useState, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import type { Member } from "@/lib/types";
 
-export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
-  return (
-    <label className="flex flex-col gap-1.5">
+// `group`: para controles hechos de botones (BoolToggle). Dentro de un <label>, tocar el título o
+// la ayuda "clickea" el primer botón y cambia la opción sin querer.
+export function Field({ label, children, hint, group = false }: { label: string; children: ReactNode; hint?: string; group?: boolean }) {
+  const content = (
+    <>
       <span className="text-label font-bold uppercase tracking-wider text-ink-ghost">{label}</span>
       {children}
       {hint && <span className="text-meta text-ink-faint">{hint}</span>}
-    </label>
+    </>
   );
+  if (group) {
+    return (
+      <div role="group" aria-label={label} className="flex flex-col gap-1.5">
+        {content}
+      </div>
+    );
+  }
+  return <label className="flex flex-col gap-1.5">{content}</label>;
 }
 
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
@@ -45,18 +55,24 @@ export function MemberSelect({
 
 // Elegir entre dos opciones con un toque (nada de tipear ni de un checkbox que se puede pasar por
 // alto): manda el valor por un input oculto, así los forms que usan fd().bool(name) no cambian.
+// Con `value` + `onChange` se controla de afuera (ej. se prende solo al cargar un cumple de menor).
 export function BoolToggle({
   name,
   defaultValue = false,
+  value: controlled,
+  onChange,
   falseLabel,
   trueLabel,
 }: {
   name: string;
   defaultValue?: boolean;
+  value?: boolean;
+  onChange?: (value: boolean) => void;
   falseLabel: string;
   trueLabel: string;
 }) {
-  const [value, setValue] = useState(defaultValue);
+  const [own, setOwn] = useState(defaultValue);
+  const value = controlled ?? own;
   return (
     <div className="flex h-11 overflow-hidden rounded-md border-[1.5px] border-line">
       <input type="hidden" name={name} value={value ? "on" : ""} />
@@ -68,12 +84,76 @@ export function BoolToggle({
           key={opt.label}
           type="button"
           aria-pressed={value === opt.checked}
-          onClick={() => setValue(opt.checked)}
+          onClick={() => {
+            setOwn(opt.checked);
+            onChange?.(opt.checked);
+          }}
           className={`flex-1 text-sm font-semibold transition-colors ${value === opt.checked ? "bg-coral text-white" : "text-ink-soft"}`}
         >
           {opt.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+const OTHER = "__otro__";
+
+// Rol o relación: un desplegable de verdad (el <datalist> en Android casi no se ve y parece texto
+// libre) con "Otro" para escribir lo que no esté en la lista. Manda el valor por un input oculto.
+export function RolePicker({
+  name,
+  options,
+  defaultValue = "",
+  onChange,
+  placeholder = "Elegí…",
+  required = false,
+}: {
+  name?: string;
+  options: readonly string[];
+  defaultValue?: string;
+  onChange?: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+}) {
+  const known = options.includes(defaultValue);
+  const [choice, setChoice] = useState(defaultValue ? (known ? defaultValue : OTHER) : "");
+  const [custom, setCustom] = useState(defaultValue && !known ? defaultValue : "");
+  const value = choice === OTHER ? custom.trim() : choice;
+  return (
+    <div className="flex flex-col gap-2">
+      {name && <input type="hidden" name={name} value={value} />}
+      <Select
+        value={choice}
+        required={required}
+        onChange={(e) => {
+          setChoice(e.target.value);
+          onChange?.(e.target.value === OTHER ? custom.trim() : e.target.value);
+        }}
+      >
+        <option value="" disabled={required}>
+          {placeholder}
+        </option>
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
+        <option value={OTHER}>Otro (lo escribo)</option>
+      </Select>
+      {choice === OTHER && (
+        <Input
+          value={custom}
+          required={required}
+          autoFocus={!custom}
+          maxLength={30}
+          placeholder="Escribilo acá"
+          onChange={(e) => {
+            setCustom(e.target.value);
+            onChange?.(e.target.value.trim());
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -121,6 +121,10 @@
   .lb-input  { @apply w-full bg-field border-[1.5px] border-field-line rounded-md
                        px-4 py-3 text-[15px] text-ink placeholder:text-ink-ghost
                        focus:border-coral focus:ring-4 focus:ring-coral/12 outline-none; }
+  /* Los desplegables llevan su flechita: sin ella parecen un campo de texto y nadie los toca. */
+  select.lb-input { @apply pr-10 bg-no-repeat;
+                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2394A3B8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+                    background-position: right 14px center; }
   .lb-chip   { @apply text-xs font-semibold rounded-full px-2.5 py-1; }
   .lb-nav    { @apply fixed inset-x-0 bottom-0 bg-surface border-t border-line shadow-nav
                        pt-2 pb-[calc(16px+env(safe-area-inset-bottom))]; }

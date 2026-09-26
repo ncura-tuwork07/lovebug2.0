@@ -21,7 +21,21 @@ export const ROLE_SUGGESTIONS = [
   "Mascota",
 ];
 
-export const DEFAULT_ROLE = "Adulto/a";
+// Antes el rol arrancaba en "Adulto/a" y se confundía con la edad: ese valor viejo se trata como
+// "sin rol" (no se muestra y el formulario pide elegir uno de verdad).
+export const LEGACY_ROLE = "Adulto/a";
+export const FALLBACK_ROLE = "Integrante";
+export const shownRole = (role: string | null | undefined) => (role && role !== LEGACY_ROLE ? role : "");
+
+// Con el cumple cargado ya sabemos si es menor de edad; null si la fecha no sirve.
+export function isMinor(birthday: string | null | undefined, today: string): boolean | null {
+  const b = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthday ?? "");
+  const t = /^(\d{4})-(\d{2})-(\d{2})$/.exec(today);
+  if (!b || !t) return null;
+  let age = +t[1] - +b[1];
+  if (+t[2] < +b[2] || (+t[2] === +b[2] && +t[3] < +b[3])) age--;
+  return age >= 0 && age < 120 ? age < 18 : null;
+}
 
 // Adultos: aparecen en finanzas, logística, vencimientos y horóscopo.
 export const adults = (members: Member[]) => members.filter((m) => !m.is_child);

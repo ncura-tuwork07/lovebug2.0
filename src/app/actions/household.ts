@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { FALLBACK_ROLE } from "@/lib/roles";
 import type { HouseholdSettings, Tradition } from "@/lib/types";
 
 const COLORS = ["#3B82F6", "#EC4899", "#10B981", "#F59E0B", "#8B5CF6", "#0EA5A5"];
@@ -20,7 +21,7 @@ export async function createHousehold(input: { name: string; memberName: string;
   const memberName = input.memberName.trim();
   if (!name) throw new Error("Ponele un nombre al hogar.");
   if (!memberName) throw new Error("Falta tu nombre.");
-  const { error } = await supabase.rpc("create_household", { p_name: name, p_member_name: memberName, p_color: COLORS[0], p_role: input.role?.trim() || "Adulto/a" });
+  const { error } = await supabase.rpc("create_household", { p_name: name, p_member_name: memberName, p_color: COLORS[0], p_role: input.role?.trim() || FALLBACK_ROLE });
   if (error) throw new Error(friendly(error.message));
   revalidatePath("/", "layout");
 }
@@ -32,7 +33,7 @@ export async function joinHousehold(input: { code: string; memberName: string; r
   const memberName = input.memberName.trim();
   if (!code) throw new Error("Falta el código de invitación.");
   if (!memberName) throw new Error("Falta tu nombre.");
-  const { error } = await supabase.rpc("join_household", { p_code: code, p_member_name: memberName, p_color: COLORS[1], p_role: input.role?.trim() || "Adulto/a" });
+  const { error } = await supabase.rpc("join_household", { p_code: code, p_member_name: memberName, p_color: COLORS[1], p_role: input.role?.trim() || FALLBACK_ROLE });
   if (error) throw new Error(friendly(error.message));
   // Recién ahora vemos al resto del hogar: elegimos un color que nadie use.
   const [{ data: members }, { data: auth }] = await Promise.all([supabase.from("family_members").select("id, color, user_id"), supabase.auth.getUser()]);

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { MapPin } from "lucide-react";
+import Link from "next/link";
+import { BellRing, Cake, Heart, MapPin, Star } from "lucide-react";
 import type { CalendarEvent, EventCategory, Member } from "@/lib/types";
 import { deleteEvent, saveEvent } from "@/app/actions/events";
 import { BottomSheet } from "@/components/ui/BottomSheet";
@@ -22,6 +23,25 @@ export const CATEGORIES: Record<EventCategory, { name: string; hex: string; bg: 
   trabajo: { name: "Trabajo", hex: "#64748B", bg: "#F1F5F9", fg: "#334155" },
 };
 
+// Lo que no es un evento pero tiene fecha (cumples, aniversarios, vencimientos): se muestra en la
+// agenda del día que corresponde para que el calendario tenga todo lo que viene.
+export type AgendaExtra = {
+  id: string;
+  day: string; // YYYY-MM-DD
+  kind: "cumple" | "aniversario" | "otro" | "vence";
+  title: string;
+  detail: string | null;
+  member_id: string | null;
+  href: string | null; // null: lo maneja onExtra
+};
+
+const EXTRA_STYLE = {
+  cumple: { icon: Cake, color: "#FF5A5F", label: "Cumple" },
+  aniversario: { icon: Heart, color: "#EC4899", label: "Aniversario" },
+  otro: { icon: Star, color: "#8B5CF6", label: "Fecha importante" },
+  vence: { icon: BellRing, color: "#F59E0B", label: "Vence" },
+};
+
 function dayKey(iso: string) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date(iso));
 }
@@ -30,10 +50,14 @@ export function EventsList({
   events,
   members,
   compact = false,
+  extras = [],
+  onExtra,
 }: {
   events: CalendarEvent[];
   members: Member[];
   compact?: boolean;
+  extras?: AgendaExtra[];
+  onExtra?: (extra: AgendaExtra) => void;
 }) {
   const sheet = useSheet<CalendarEvent>();
   const [allDay, setAllDay] = useState(false);
@@ -70,6 +94,48 @@ export function EventsList({
     (acc[dayKey(ev.starts_at)] ??= []).push(ev);
     return acc;
   }, {});
+  const extrasByDay = extras.reduce<Record<string, AgendaExtra[]>>((acc, x) => {
+    (acc[x.day] ??= []).push(x);
+    return acc;
+  }, {});
+  const days = [...new Set([...Object.keys(byDay), ...Object.keys(extrasByDay)])].sort();
+
+  const renderExtra = (x: AgendaExtra) => {
+    const style = EXTRA_STYLE[x.kind];
+    const Icon = style.icon;
+    const member = memberById(members, x.member_id);
+    const cls = "lb-card flex w-full items-center gap-3 !p-3 text-left";
+    const content = (
+      <>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: `${style.color}22`, color: style.color }}>
+          <Icon size={17} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-item font-medium text-ink">{x.title}</p>
+          <p className="text-meta text-ink-faint">
+            <span className="font-semibold" style={{ color: style.color }}>
+              {style.label}
+            </span>
+            {x.detail ? ` · ${x.detail}` : ""}
+          </p>
+        </div>
+        {member && <MemberChip member={member} />}
+      </>
+    );
+    return (
+      <li key={x.id}>
+        {x.href ? (
+          <Link href={x.href} className={cls} style={{ borderLeft: `4px solid ${style.color}` }}>
+            {content}
+          </Link>
+        ) : (
+          <button type="button" onClick={() => onExtra?.(x)} className={cls} style={{ borderLeft: `4px solid ${style.color}` }}>
+            {content}
+          </button>
+        )}
+      </li>
+    );
+  };
 
   const renderEvent = (ev: CalendarEvent) => {
     const cat = CATEGORIES[ev.category] ?? CATEGORIES.familia;
@@ -112,7 +178,7 @@ export function EventsList({
 
   return (
     <>
-      {events.length === 0 && (
+      {events.length === 0 && extras.length === 0 && (
         <p className="font-accent text-2xl text-ink-faint">
           {compact ? "Nada en el calendario para hoy." : "Todavía no hay eventos. Tocá + para crear el primero."}
         </p>
@@ -121,14 +187,15 @@ export function EventsList({
       {compact ? (
         <ul className="flex flex-col gap-2">{events.map(renderEvent)}</ul>
       ) : (
-        Object.keys(byDay)
-          .sort()
-          .map((day) => (
-            <section key={day} className="flex flex-col gap-2">
-              <h2 className="text-h2 font-display uppercase tracking-wide text-info">{relativeDayLabel(day)}</h2>
-              <ul className="flex flex-col gap-2">{byDay[day].map(renderEvent)}</ul>
-            </section>
-          ))
+        days.map((day) => (
+          <section key={day} className="flex flex-col gap-2">
+            <h2 className="text-h2 font-display uppercase tracking-wide text-info">{relativeDayLabel(day)}</h2>
+            <ul className="flex flex-col gap-2">
+              {(extrasByDay[day] ?? []).map(renderExtra)}
+              {(byDay[day] ?? []).map(renderEvent)}
+            </ul>
+          </section>
+        ))
       )}
 
       {!compact && <Fab onClick={openNew} label="Nuevo evento" />}

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { FALLBACK_ROLE } from "@/lib/roles";
 
 export type MemberInput = {
   id?: string;
@@ -21,7 +22,7 @@ export async function saveMember(input: MemberInput) {
   const supabase = await createClient();
   const row = {
     name: input.name.trim(),
-    role: input.role.trim() || "Adulto/a",
+    role: input.role.trim() || FALLBACK_ROLE,
     is_child: input.is_child,
     color: input.color,
     birthday: input.birthday || null,

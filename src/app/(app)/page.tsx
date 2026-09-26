@@ -116,7 +116,7 @@ export default async function HoyPage() {
 
       {(reminders.length > 0 || dates.length > 0 || famEvents.length > 0) && (
         <section className="lb-card">
-          <Link href="/vencimientos" className="mb-3 flex items-center justify-between">
+          <Link href="/calendario" className="mb-3 flex items-center justify-between">
             <h2 className="text-h2 flex items-center gap-2 font-display uppercase tracking-wide" style={{ color: "#F59E0B" }}>
               <BellRing size={16} /> Se viene
             </h2>

@@ -7,20 +7,22 @@ import type { Member } from "@/lib/types";
 import { saveMember } from "@/app/actions/members";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Fab } from "@/components/ui/Fab";
-import { BoolToggle, Field, Input, SubmitRow } from "@/components/ui/Field";
-import { DEFAULT_ROLE, ROLE_SUGGESTIONS } from "@/lib/roles";
+import { BoolToggle, Field, Input, RolePicker, SubmitRow } from "@/components/ui/Field";
+import { isMinor, ROLE_SUGGESTIONS, shownRole } from "@/lib/roles";
 import { MemberAvatar } from "@/components/ui/MemberChip";
 import { fd, useSheet } from "@/components/ui/useSheet";
-import { formatDay } from "@/lib/format";
+import { formatDay, todayAR } from "@/lib/format";
 
 const PALETTE = ["#FFB347", "#10B981", "#8B5CF6", "#0EA5A5", "#FF9F43", "#6366F1", "#EF4444", "#F59E0B", "#3B82F6", "#EC4899"];
 
 export function MembersList({ members, points }: { members: Member[]; points: Record<string, number> }) {
   const sheet = useSheet<Member>();
   const [color, setColor] = useState(PALETTE[0]);
+  const [isChild, setIsChild] = useState(false);
 
   function openNew() {
     setColor(PALETTE[(members.length + 1) % PALETTE.length]);
+    setIsChild(false);
     sheet.openNew();
   }
 
@@ -57,7 +59,8 @@ export function MembersList({ members, points }: { members: Member[]; points: Re
                   {m.nickname && <span className="text-ink-faint"> · {m.nickname}</span>}
                 </p>
                 <p className="flex flex-wrap items-center gap-x-2 text-meta text-ink-faint">
-                  <span>{m.role}</span>
+                  {shownRole(m.role) && <span>{m.role}</span>}
+                  {m.is_child && !m.birthday && <span>Menor</span>}
                   {m.birthday && (
                     <span className="inline-flex items-center gap-1">
                       <Cake size={11} /> {formatDay(m.birthday, "d 'de' MMM")}
@@ -85,22 +88,24 @@ export function MembersList({ members, points }: { members: Member[]; points: Re
             <Input name="name" required autoFocus />
           </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Rol" hint="Mamá, abuela, amigo, lo que sea (no la edad).">
-              <Input name="role" list="lb-roles" defaultValue={DEFAULT_ROLE} maxLength={30} />
-              <datalist id="lb-roles">
-                {ROLE_SUGGESTIONS.map((r) => (
-                  <option key={r} value={r} />
-                ))}
-              </datalist>
+            <Field label="Qué es en la familia">
+              <RolePicker name="role" options={ROLE_SUGGESTIONS} required />
             </Field>
             <Field label="Cumpleaños">
-              <Input name="birthday" type="date" />
+              <Input
+                name="birthday"
+                type="date"
+                onChange={(e) => {
+                  const minor = isMinor(e.target.value, todayAR());
+                  if (minor !== null) setIsChild(minor);
+                }}
+              />
             </Field>
           </div>
-          <Field label="Edad" hint="Menor: suma puntos y premios; no aparece en finanzas ni horóscopo.">
-            <BoolToggle name="is_child" falseLabel="Adulto/a" trueLabel="Menor" />
+          <Field group label="¿Es menor de edad?" hint="Los menores suman puntos y premios, y no aparecen en finanzas ni en el horóscopo. Con el cumple se marca solo.">
+            <BoolToggle name="is_child" value={isChild} onChange={setIsChild} falseLabel="No" trueLabel="Sí, es menor" />
           </Field>
-          <Field label="Color" hint="Después completás foto, documentos y el resto desde su perfil.">
+          <Field group label="Color" hint="Después completás foto, documentos y el resto desde su perfil.">
             <div className="flex flex-wrap gap-2">
               {PALETTE.map((c) => (
                 <button

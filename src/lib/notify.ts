@@ -102,7 +102,7 @@ async function runJobForHousehold(admin: SupabaseClient, job: Job, householdId: 
       sent += await once(admin, hh, `date:${d.id}:${d.next}:${d.daysUntil}`, {
         title: d.daysUntil === 0 ? `¡Hoy es ${d.title}! 🎉` : `${d.title} en ${d.daysUntil} día${d.daysUntil === 1 ? "" : "s"} 🎁`,
         body: d.gift_ideas ? `Ideas de regalo: ${d.gift_ideas}` : d.turns ? `Cumple ${d.turns}` : "Para que no se pase.",
-        url: "/vencimientos",
+        url: "/calendario?tab=fechas",
         tag: `date-${d.id}`,
       });
     }

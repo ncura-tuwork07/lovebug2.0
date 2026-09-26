@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/Logo";
+import { RolePicker } from "@/components/ui/Field";
 import { ROLE_SUGGESTIONS } from "@/lib/roles";
 
 // Fondo oscuro fijo (no cambia con el tema) para login, registro e invitaciones.
@@ -40,14 +41,5 @@ export function AuthLink({ href, children }: { href: string; children: ReactNode
 }
 
 export function RoleInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <>
-      <AuthInput list="lb-roles" placeholder="Tu rol (Mamá, Papá, Pareja, Amigo…)" value={value} onChange={(e) => onChange(e.target.value)} maxLength={30} />
-      <datalist id="lb-roles">
-        {ROLE_SUGGESTIONS.map((r) => (
-          <option key={r} value={r} />
-        ))}
-      </datalist>
-    </>
-  );
+  return <RolePicker options={ROLE_SUGGESTIONS} defaultValue={value} onChange={onChange} placeholder="Tu rol en la familia (Mamá, Papá, Pareja…)" />;
 }

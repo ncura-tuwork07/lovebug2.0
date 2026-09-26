@@ -102,7 +102,7 @@ export function RecipesList({ recipes }: { recipes: Recipe[] }) {
             </Field>
           </div>
 
-          <Field label="Ingredientes" hint="Cantidad para las porciones de arriba. Se escalan solas al planificar.">
+          <Field group label="Ingredientes" hint="Cantidad para las porciones de arriba. Se escalan solas al planificar.">
             <div className="flex flex-col gap-2">
               {ings.map((ing, i) => (
                 <div key={i} className="grid grid-cols-[1fr_64px_72px_36px] items-center gap-2">
