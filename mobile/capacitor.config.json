@@ -10,5 +10,14 @@
   "android": {
     "backgroundColor": "#FFF6F1"
   },
-  "appendUserAgent": "LovebugApp"
+  "appendUserAgent": "LovebugApp",
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": [
+        "alert",
+        "sound",
+        "badge"
+      ]
+    }
+  }
 }

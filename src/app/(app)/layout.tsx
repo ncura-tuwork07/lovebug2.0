@@ -6,6 +6,7 @@ import { HouseholdProvider } from "@/components/HouseholdProvider";
 import { UsageTracker } from "@/components/UsageTracker";
 import { PasskeyPrompt } from "@/components/auth/PasskeyPrompt";
 import { NavigationProgress } from "@/components/NavigationProgress";
+import { NativePushBridge } from "@/components/NativePushBridge";
 import { getSessionContext } from "@/lib/data";
 import { UndoProvider } from "@/components/ui/Undo";
 import { ContaleProvider } from "@/components/assistant/Contale";
@@ -25,6 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <NavigationProgress />
       <UsageTracker />
       <PasskeyPrompt />
+      <NativePushBridge />
       <LocationSharer memberId={me.id} enabled={me.share_location} />
       <UndoProvider>
         <ContaleProvider enabled={Boolean(process.env.ANTHROPIC_API_KEY)} members={members} today={todayAR()}>

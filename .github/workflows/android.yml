@@ -41,6 +41,30 @@ jobs:
           yes | "$SDKM" --licenses > /dev/null || true
           "$SDKM" --install "platforms;android-36" "build-tools;36.0.0"
 
+      # Avisos: con el google-services.json de Firebase (en mobile/android/app/ o como secreto
+      # GOOGLE_SERVICES_JSON) la app trae las notificaciones y se lo avisa a la web en el user agent.
+      - name: Firebase (avisos)
+        working-directory: mobile
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          F=android/app/google-services.json
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then printf '%s' "$GOOGLE_SERVICES_JSON" > "$F"; fi
+          if [ ! -s "$F" ]; then
+            echo "Sin google-services.json: la app sale sin avisos."
+            exit 0
+          fi
+          node -e '
+            const fs = require("fs");
+            const json = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+            const ok = (json.client || []).some((c) => c.client_info?.android_client_info?.package_name === "app.lovebug.familia");
+            if (!ok) { console.log("::warning::El google-services.json no es de app.lovebug.familia: la app sale sin avisos."); fs.rmSync(process.argv[1]); process.exit(0); }
+            const c = JSON.parse(fs.readFileSync("capacitor.config.json", "utf8"));
+            c.appendUserAgent = "LovebugApp LovebugPush";
+            fs.writeFileSync("capacitor.config.json", JSON.stringify(c, null, 2));
+            console.log("Con avisos (Firebase: " + json.project_info?.project_id + ")");
+          ' "$F"
+
       - name: Dependencias y sync de Capacitor
         working-directory: mobile
         run: |
@@ -69,7 +93,7 @@ jobs:
           make_latest: true
           files: Lovebug.apk
           body: |
-            App de Lovebug para Android: abre la web y pide la huella con el cartel del propio celu.
+            App de Lovebug para Android: abre la web, pide la huella con el cartel del propio celu y recibe los avisos.
             Instalación: descargá Lovebug.apk en el celu, abrilo y permití instalar apps desde el navegador si Android lo pide.
             Las versiones nuevas se instalan encima de la anterior.
 

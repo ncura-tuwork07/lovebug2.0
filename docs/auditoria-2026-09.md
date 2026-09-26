@@ -69,8 +69,9 @@ tamaño de botones. Además se revisaron el build, las dependencias y los endpoi
 
 **Recomendado**
 1. Estados vacíos con un botón concreto ("Cargar el primer gasto") además del "Tocá +".
-2. Avisos en la app Android: hoy llegan por la web instalada; para que lleguen a la app hace falta
-   Firebase Cloud Messaging (un proyecto de Firebase y su `google-services.json`).
+2. Avisos en la app Android: el código ya está (Firebase Cloud Messaging). Falta crear el proyecto de
+   Firebase, sumar su `google-services.json` a `mobile/android/app/` y la cuenta de servicio en la
+   variable `FIREBASE_SERVICE_ACCOUNT` de Vercel.
 
 ## UI
 

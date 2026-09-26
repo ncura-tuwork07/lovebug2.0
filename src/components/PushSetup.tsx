@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Bell, BellOff, BellRing } from "lucide-react";
-import { removePushSubscription, savePushSubscription, sendTestPush } from "@/app/actions/push";
+import { nativePushReady, removeNativePushToken, removePushSubscription, saveNativePushToken, savePushSubscription, sendTestPush } from "@/app/actions/push";
+import { nativeAppWithoutPush, nativePushAvailable, nativePushPermission, nativePushToken, registerNativePush, rememberNativePush, unregisterNativePush } from "@/lib/native";
 
 function urlBase64ToUint8Array(base64: string) {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
@@ -11,14 +12,29 @@ function urlBase64ToUint8Array(base64: string) {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }
 
-type Status = "unsupported" | "denied" | "off" | "on" | "working";
+type Status = "unsupported" | "app-pending" | "denied" | "off" | "on" | "working";
 
 export function PushSetup() {
   const [status, setStatus] = useState<Status>("working");
   const [msg, setMsg] = useState<string | null>(null);
+  const [native, setNative] = useState(false); // app de Android: los avisos van por Firebase
 
   useEffect(() => {
     (async () => {
+      if (nativeAppWithoutPush()) {
+        setStatus("app-pending");
+        return;
+      }
+      if (nativePushAvailable()) {
+        setNative(true);
+        if (!(await nativePushReady())) {
+          setStatus("app-pending");
+          return;
+        }
+        const permission = await nativePushPermission();
+        setStatus(permission === "denied" ? "denied" : permission === "granted" && nativePushToken() ? "on" : "off");
+        return;
+      }
       if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
         setStatus("unsupported");
         return;
@@ -33,7 +49,36 @@ export function PushSetup() {
     })().catch(() => setStatus("unsupported"));
   }, []);
 
+  async function enableNative() {
+    setStatus("working");
+    setMsg(null);
+    try {
+      const token = await registerNativePush();
+      await saveNativePushToken(token, navigator.userAgent.slice(0, 200));
+      rememberNativePush(token);
+      setStatus("on");
+      setMsg("Listo. Te mando uno de prueba…");
+      setMsg((await sendTestPush()) ?? "Avisos activados en este celu.");
+    } catch (e) {
+      if ((e as { code?: string }).code === "denied") {
+        setStatus("denied");
+        return;
+      }
+      setStatus(nativePushToken() ? "on" : "off");
+      setMsg(e instanceof Error ? e.message : "No pudimos activar los avisos.");
+    }
+  }
+
+  async function disableNative() {
+    setStatus("working");
+    const token = await unregisterNativePush();
+    if (token) await removeNativePushToken(token).catch(() => {});
+    setStatus("off");
+    setMsg("Avisos desactivados en este celu.");
+  }
+
   async function enable() {
+    if (native) return enableNative();
     setStatus("working");
     setMsg(null);
     try {
@@ -55,8 +100,7 @@ export function PushSetup() {
       });
       setStatus("on");
       setMsg("Listo. Te mando una de prueba…");
-      await sendTestPush();
-      setMsg("Avisos activados en este dispositivo.");
+      setMsg((await sendTestPush()) ?? "Avisos activados en este dispositivo.");
     } catch (e) {
       setStatus("off");
       setMsg(e instanceof Error ? e.message : "No pudimos activar los avisos.");
@@ -64,6 +108,7 @@ export function PushSetup() {
   }
 
   async function disable() {
+    if (native) return disableNative();
     setStatus("working");
     try {
       const reg = await navigator.serviceWorker.getRegistration();
@@ -77,6 +122,17 @@ export function PushSetup() {
     } catch {
       setStatus("on");
     }
+  }
+
+  if (status === "app-pending") {
+    return (
+      <section className="lb-card flex items-center gap-3 !p-3">
+        <BellOff size={18} className="shrink-0 text-ink-ghost" />
+        <p className="text-sm text-ink-faint">
+          En la app todavía no llegan avisos al celu. Mientras tanto, la campanita de arriba te junta todo lo que vence, los cumples y los traslados del día.
+        </p>
+      </section>
+    );
   }
 
   if (status === "unsupported") {
@@ -102,7 +158,9 @@ export function PushSetup() {
             {status === "on"
               ? "Activados: vencimientos, traslados en 1 hora, cumples y el resumen del domingo."
               : status === "denied"
-                ? "Bloqueaste las notificaciones. Habilitalas en los ajustes del navegador para este sitio."
+                ? native
+                  ? "Bloqueaste las notificaciones de Lovebug. Habilitalas en Ajustes del celu → Apps → Lovebug → Notificaciones."
+                  : "Bloqueaste las notificaciones. Habilitalas en los ajustes del navegador para este sitio."
                 : "Te avisamos cuando algo vence, cuando sale un traslado y los domingos con el resumen."}
           </p>
         </div>

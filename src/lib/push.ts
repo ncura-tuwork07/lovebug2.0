@@ -1,6 +1,7 @@
 import "server-only";
 import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { FCM_PREFIX, sendFcm } from "@/lib/fcm";
 
 export type PushPayload = { title: string; body: string; url?: string; tag?: string };
 
@@ -17,15 +18,18 @@ function configure(): boolean {
   return true;
 }
 
-// Envía a una lista de suscripciones; limpia las que ya no existen (410/404).
+// Envía a una lista de suscripciones (web o app de Android); limpia las que ya no existen.
 export async function sendPushToSubscriptions(subs: Sub[], payload: PushPayload): Promise<number> {
-  if (!configure() || subs.length === 0) return 0;
+  const native = subs.filter((s) => s.endpoint.startsWith(FCM_PREFIX));
+  const web = configure() ? subs.filter((s) => !s.endpoint.startsWith(FCM_PREFIX)) : [];
+  if (web.length === 0 && native.length === 0) return 0;
   const body = JSON.stringify(payload);
   const dead: string[] = [];
   let sent = 0;
 
+  const fcm = sendFcm(native.map((s) => s.endpoint.slice(FCM_PREFIX.length)), payload);
   await Promise.all(
-    subs.map(async (s) => {
+    web.map(async (s) => {
       try {
         await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, body, {
           TTL: 60 * 60 * 6,
@@ -38,6 +42,9 @@ export async function sendPushToSubscriptions(subs: Sub[], payload: PushPayload)
       }
     })
   );
+  const app = await fcm;
+  sent += app.sent;
+  dead.push(...app.dead.map((t) => FCM_PREFIX + t));
 
   if (dead.length) {
     const admin = createAdminClient();

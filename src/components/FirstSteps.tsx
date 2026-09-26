@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, ChevronRight, Circle, Sparkles, X } from "lucide-react";
-import { isNativeApp, nativeUnlockSaved } from "@/lib/native";
+import { nativePushReady } from "@/app/actions/push";
+import { isNativeApp, nativeAppWithoutPush, nativePushAvailable, nativePushToken, nativeUnlockSaved } from "@/lib/native";
 
 export type FirstStep = { key: string; label: string; hint: string; href: string; done: boolean };
 
@@ -15,7 +16,7 @@ const HIDE_KEY = "lb-first-steps-hidden";
 export function FirstSteps({ steps: serverSteps, householdId }: { steps: FirstStep[]; householdId: string }) {
   const [hidden, setHidden] = useState(true); // hasta leer el celu, no mostramos nada (sin parpadeo)
   const [pushOn, setPushOn] = useState(false);
-  const [native, setNative] = useState(false);
+  const [noPush, setNoPush] = useState(false); // app de Android sin avisos todavía
   const [nativeHuella, setNativeHuella] = useState(false);
 
   useEffect(() => {
@@ -25,8 +26,12 @@ export function FirstSteps({ steps: serverSteps, householdId }: { steps: FirstSt
       setHidden(false);
     }
     if (isNativeApp()) {
-      setNative(true);
       nativeUnlockSaved().then(setNativeHuella);
+      setNoPush(nativeAppWithoutPush());
+      setPushOn(Boolean(nativePushToken()));
+      // Si el servidor todavía no tiene Firebase, el paso no se puede hacer: no lo mostramos.
+      if (nativePushAvailable() && !nativePushToken()) nativePushReady().then((ready) => setNoPush(!ready), () => setNoPush(true));
+      return;
     }
     (async () => {
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
@@ -35,9 +40,9 @@ export function FirstSteps({ steps: serverSteps, householdId }: { steps: FirstSt
     })().catch(() => {});
   }, [householdId]);
 
-  // En la app Android la huella es la del celu, y los avisos todavía llegan por la web instalada.
+  // En la app Android la huella es la del celu, y los avisos van por Firebase (si la app ya lo trae).
   const steps = serverSteps
-    .filter((s) => !(native && s.key === "avisos"))
+    .filter((s) => !(noPush && s.key === "avisos"))
     .map((s) => (s.key === "avisos" ? { ...s, done: s.done || pushOn } : s.key === "huella" ? { ...s, done: s.done || nativeHuella } : s));
   const done = steps.filter((s) => s.done).length;
   if (hidden || done === steps.length) return null;

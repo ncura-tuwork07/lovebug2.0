@@ -20,6 +20,11 @@
             </intent-filter>
         </activity>
 
+        <!-- Avisos (Firebase): ícono de la barra, color y canal por defecto cuando la app está cerrada. -->
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_lovebug" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/lovebug_coral" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="avisos" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -29,12 +34,13 @@
         </provider>
     </application>
 
-    <!-- Permisos: internet, la ubicación para el Mapa y la cámara para sacar fotos (perfil, Círculo,
-         tickets, el plano de la casa). La huella la declara el plugin de biometría. -->
+    <!-- Permisos: internet, la ubicación para el Mapa, la cámara para sacar fotos (perfil, Círculo,
+         tickets, el plano de la casa) y mostrar avisos. La huella la declara el plugin de biometría. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 </manifest>
