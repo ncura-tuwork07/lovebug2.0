@@ -6,15 +6,35 @@ import { browserSupportsWebAuthn, startAuthentication } from "@simplewebauthn/br
 import { getPasskeyLoginOptions, verifyPasskeyLogin } from "@/app/actions/passkeys";
 import { deviceHasPasskey, forgetDevicePasskey, rememberDevicePasskey } from "@/lib/passkeyClient";
 import { LadybugLoader } from "@/components/ui/LadybugLoader";
+import { isNativeApp } from "@/lib/native";
+import { NativeUnlockButton } from "@/components/auth/NativeUnlock";
 
 // Solo aparece en dispositivos donde ya se activó la huella (si no, el celu diría
 // "no hay llaves de acceso"). La primera vez se entra con contraseña y ahí se ofrece activarla.
 export function PasskeyLoginButton({ next, onError }: { next: string; onError: (message: string | null) => void }) {
   const [available, setAvailable] = useState(false);
+  const [native, setNative] = useState(false);
+  const [nativeReady, setNativeReady] = useState(true);
   const [phase, setPhase] = useState<"idle" | "waiting" | "entering">("idle");
 
-  useEffect(() => setAvailable(browserSupportsWebAuthn() && deviceHasPasskey()), []);
+  useEffect(() => {
+    // En la app Android: el cartel de huella del celu, que aparece solo al abrir el login.
+    if (isNativeApp()) return setNative(true);
+    setAvailable(browserSupportsWebAuthn() && deviceHasPasskey());
+  }, []);
 
+  if (native) {
+    return (
+      <>
+        {nativeReady && (
+          <div className="my-3 flex items-center gap-2 text-xs text-white/40">
+            <span className="h-px flex-1 bg-white/15" />o<span className="h-px flex-1 bg-white/15" />
+          </div>
+        )}
+        <NativeUnlockButton next={next} auto onError={onError} onUnavailable={() => setNativeReady(false)} />
+      </>
+    );
+  }
   if (!available) return null;
 
   async function handleClick() {

@@ -7,19 +7,24 @@ import { browserSupportsWebAuthn } from "@simplewebauthn/browser";
 import { deletePasskey } from "@/app/actions/passkeys";
 import { devicePasskeyId, forgetDevicePasskey, registerThisDevice } from "@/lib/passkeyClient";
 import type { UserPasskey } from "@/lib/types";
+import { isNativeApp } from "@/lib/native";
+import { NativeUnlockSection } from "@/components/auth/NativeUnlock";
 
 export function PasskeysSection({ passkeys }: { passkeys: UserPasskey[] }) {
   const router = useRouter();
   const [supported, setSupported] = useState(false);
+  const [native, setNative] = useState(false);
   const [thisDeviceId, setThisDeviceId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setNative(isNativeApp());
     setSupported(browserSupportsWebAuthn());
     setThisDeviceId(devicePasskeyId());
   }, []);
 
+  if (native) return <NativeUnlockSection />;
   if (!supported) return null;
 
   const activeHere = Boolean(thisDeviceId && passkeys.some((p) => p.id === thisDeviceId));

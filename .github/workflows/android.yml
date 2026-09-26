@@ -1,0 +1,81 @@
+name: App Android
+
+# Compila la app de Android (Capacitor) cuando cambia algo en mobile/ y la deja en
+# https://lovebug-wheat.vercel.app/lovebug-android.apk (y en Releases del repo).
+on:
+  push:
+    branches: [main]
+    paths: ["mobile/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: SDK de Android
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Dependencias y sync de Capacitor
+        working-directory: mobile
+        run: |
+          npm ci
+          npx cap sync android
+
+      - name: Compilar el APK
+        working-directory: mobile/android
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/Lovebug.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Lovebug-android-${{ github.run_number }}
+          path: Lovebug.apk
+
+      - name: Publicar en Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-${{ github.run_number }}
+          name: Lovebug para Android · versión ${{ github.run_number }}
+          make_latest: true
+          files: Lovebug.apk
+          body: |
+            App de Lovebug para Android: abre la web y pide la huella con el cartel del propio celu.
+            Instalación: descargá Lovebug.apk en el celu, abrilo y permití instalar apps desde el navegador si Android lo pide.
+            Las versiones nuevas se instalan encima de la anterior.
+
+      - name: Dejarla para descargar desde la web
+        run: |
+          cp Lovebug.apk public/lovebug-android.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/lovebug-android.apk
+          git commit -m "App Android: versión ${{ github.run_number }}" || exit 0
+          for i in 1 2 3; do git pull --rebase origin main && git push origin HEAD:main && break; sleep 5; done

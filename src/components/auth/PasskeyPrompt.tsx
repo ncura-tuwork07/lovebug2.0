@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Fingerprint } from "lucide-react";
 import { dismissPasskeyOffer, registerThisDevice, shouldOfferPasskey } from "@/lib/passkeyClient";
+import { isNativeApp, isNativeCancel, nativeBiometricAvailable, nativeUnlockSaved } from "@/lib/native";
+import { activateNativeUnlock } from "@/components/auth/NativeUnlock";
 
 // Justo después de entrar con la contraseña: "¿Querés entrar con tu huella la próxima vez?".
 // Si decís que sí, el celu te pide la huella (o el patrón) en ese momento y queda activado.
@@ -19,7 +21,11 @@ export function PasskeyPrompt() {
       sessionStorage.removeItem("lb-offer-passkey");
     } catch {}
     if (!justLoggedIn) return;
-    shouldOfferPasskey().then((ok) => {
+    // En la app Android se ofrece la huella del propio celu; en el navegador, la passkey.
+    const offer = isNativeApp()
+      ? Promise.all([nativeBiometricAvailable(), nativeUnlockSaved()]).then(([available, saved]) => available && !saved)
+      : shouldOfferPasskey();
+    offer.then((ok) => {
       if (ok) setTimeout(() => setOpen(true), 600);
     });
   }, []);
@@ -30,12 +36,12 @@ export function PasskeyPrompt() {
     setBusy(true);
     setError(null);
     try {
-      await registerThisDevice();
+      await (isNativeApp() ? activateNativeUnlock() : registerThisDevice());
       setDone(true);
       setTimeout(() => setOpen(false), 1800);
     } catch (e) {
       // Si cancelaste el aviso de la huella, no es un error: queda para otra vez.
-      if (e instanceof Error && e.name === "NotAllowedError") {
+      if ((e instanceof Error && e.name === "NotAllowedError") || (isNativeApp() && isNativeCancel(e))) {
         setBusy(false);
         return;
       }

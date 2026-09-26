@@ -14,6 +14,18 @@ function startsWithAny(pathname: string, prefixes: string[]) {
   return prefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
+// La app Android (Capacitor) carga cada página a través de un intermediario que sigue las
+// redirecciones por su cuenta: descarta las cookies que vienen en el medio y deja la dirección
+// vieja en pantalla. Para ella, "redirigir" es una página chiquita que guarda las cookies y salta.
+const NATIVE_APP_UA = "LovebugApp";
+function softRedirect(target: string) {
+  const js = JSON.stringify(target).replace(/</g, "\\u003c");
+  return new NextResponse(
+    `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><body style="background:#1E293B"><script>location.replace(${js})</script>`,
+    { status: 200, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } }
+  );
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -48,6 +60,14 @@ export async function updateSession(request: NextRequest) {
   const userId = claimsData?.claims?.sub ?? null;
 
   const { pathname } = request.nextUrl;
+  const nativeDocument =
+    request.method === "GET" && (request.headers.get("user-agent") ?? "").includes(NATIVE_APP_UA) && (request.headers.get("accept") ?? "").includes("text/html");
+  // Toda redirección se lleva las cookies de sesión recién renovadas (si no, se pierden).
+  const redirectTo = (url: URL) => {
+    const res = nativeDocument ? softRedirect(url.pathname + url.search) : NextResponse.redirect(url);
+    for (const cookie of supabaseResponse.cookies.getAll()) res.cookies.set(cookie);
+    return res;
+  };
 
   if (!userId) {
     // Sin sesión, la raíz muestra la landing (misma URL, sin redirigir).
@@ -60,7 +80,7 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = pathname !== "/" ? `?next=${encodeURIComponent(pathname + request.nextUrl.search)}` : "";
-    return NextResponse.redirect(url);
+    return redirectTo(url);
   }
 
   // Solo al ver la página: las server actions de /login y /registro (POST) corren justo después de
@@ -70,7 +90,7 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     url.search = "";
-    return NextResponse.redirect(url);
+    return redirectTo(url);
   }
 
   // Bloqueo con huella: la sesión de Supabase puede seguir viva, pero si hace rato que este
@@ -85,7 +105,7 @@ export async function updateSession(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = LOCK_PATH;
       url.search = pathname !== "/" ? `?next=${encodeURIComponent(pathname + request.nextUrl.search)}` : "";
-      return NextResponse.redirect(url);
+      return redirectTo(url);
     }
     // Sigue activo: renovamos el vencimiento, como la sesión de Supabase.
     const refreshed = await signUnlock(userId);

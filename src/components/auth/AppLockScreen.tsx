@@ -6,6 +6,8 @@ import { startAuthentication } from "@simplewebauthn/browser";
 import { createClient } from "@/lib/supabase/client";
 import { getUnlockOptions, verifyAppUnlock } from "@/app/actions/appLock";
 import { deviceHasPasskey, rememberDevicePasskey } from "@/lib/passkeyClient";
+import { isNativeApp } from "@/lib/native";
+import { NativeUnlockButton } from "@/components/auth/NativeUnlock";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { LadybugLoader } from "@/components/ui/LadybugLoader";
 
@@ -15,11 +17,17 @@ const WATCHDOG_MS = 20_000;
 export function AppLockScreen({ next }: { next: string }) {
   // null mientras se chequea localStorage, para no mostrar el botón que no corresponde ni un instante.
   const [hasPasskey, setHasPasskey] = useState<boolean | null>(null);
+  // En la app Android se usa el cartel de huella del propio celu (null = todavía no sabemos).
+  const [native, setNative] = useState<boolean | null>(null);
+  const [nativeReady, setNativeReady] = useState(true);
   const [busy, setBusy] = useState(false);
   const [entering, setEntering] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => setHasPasskey(deviceHasPasskey()), []);
+  useEffect(() => {
+    setNative(isNativeApp());
+    setHasPasskey(deviceHasPasskey());
+  }, []);
 
   useEffect(() => {
     if (!busy) return;
@@ -55,7 +63,28 @@ export function AppLockScreen({ next }: { next: string }) {
     window.location.replace(next !== "/" ? `/login?next=${encodeURIComponent(next)}` : "/login");
   }
 
-  if (hasPasskey === null) return null;
+  if (hasPasskey === null || native === null) return null;
+
+  if (native) {
+    return (
+      <AuthShell title="Lovebug está bloqueado" subtitle={nativeReady ? "Poné tu huella para seguir." : "Activá la huella desde Ajustes después de entrar."}>
+        <div className="flex flex-col items-center gap-5">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-white">
+            <Lock size={28} />
+          </span>
+          {error && <p className="text-center text-sm text-coral">{error}</p>}
+          <NativeUnlockButton next={next} auto onError={setError} onUnavailable={() => setNativeReady(false)} />
+          <button
+            type="button"
+            onClick={goToPassword}
+            className={nativeReady ? "min-h-11 text-sm font-semibold text-white/70 underline-offset-4 hover:underline" : "lb-btn w-full"}
+          >
+            {nativeReady ? "Entrar con mi contraseña" : "Entrar con tu contraseña"}
+          </button>
+        </div>
+      </AuthShell>
+    );
+  }
 
   return (
     <AuthShell

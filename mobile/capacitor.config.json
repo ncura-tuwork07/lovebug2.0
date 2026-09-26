@@ -1,0 +1,14 @@
+{
+  "appId": "app.lovebug.familia",
+  "appName": "Lovebug",
+  "webDir": "www",
+  "server": {
+    "url": "https://lovebug-wheat.vercel.app",
+    "androidScheme": "https",
+    "errorPath": "offline.html"
+  },
+  "android": {
+    "backgroundColor": "#FFF6F1"
+  },
+  "appendUserAgent": "LovebugApp"
+}
