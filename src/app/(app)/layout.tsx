@@ -8,6 +8,8 @@ import { PasskeyPrompt } from "@/components/auth/PasskeyPrompt";
 import { NavigationProgress } from "@/components/NavigationProgress";
 import { getSessionContext } from "@/lib/data";
 import { UndoProvider } from "@/components/ui/Undo";
+import { ContaleProvider } from "@/components/assistant/Contale";
+import { todayAR } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -25,11 +27,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <PasskeyPrompt />
       <LocationSharer memberId={me.id} enabled={me.share_location} />
       <UndoProvider>
-        <div className="mx-auto w-full max-w-md flex-1">
-          <Header />
-          <main className="pb-28">{children}</main>
-        </div>
-        <BottomNav />
+        <ContaleProvider enabled={Boolean(process.env.ANTHROPIC_API_KEY)} members={members} today={todayAR()}>
+          <div className="mx-auto w-full max-w-md flex-1">
+            <Header />
+            <main className="pb-28">{children}</main>
+          </div>
+          <BottomNav />
+        </ContaleProvider>
       </UndoProvider>
     </HouseholdProvider>
   );

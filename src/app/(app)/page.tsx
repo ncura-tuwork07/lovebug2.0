@@ -14,7 +14,7 @@ import { TasksList } from "@/components/modules/TasksList";
 import { TripsList } from "@/components/modules/TripsList";
 import { EventsList } from "@/components/modules/EventsList";
 import { DailyInspiration } from "@/components/DailyInspiration";
-import { Contale } from "@/components/assistant/Contale";
+import { ContaleCard } from "@/components/assistant/Contale";
 import { FirstSteps, type FirstStep } from "@/components/FirstSteps";
 
 export const dynamic = "force-dynamic";
@@ -80,7 +80,7 @@ export default async function HoyPage() {
         <h1 className="text-display font-display font-bold text-ink">{heading}</h1>
       </header>
 
-      {process.env.ANTHROPIC_API_KEY && <Contale members={members} today={today} />}
+      <ContaleCard />
 
       {household && <FirstSteps steps={firstSteps} householdId={household.id} />}
 

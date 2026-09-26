@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useTransition } from "react";
-import { Settings, Users } from "lucide-react";
+import { Mic, Settings, Users } from "lucide-react";
+import { useContale } from "@/components/assistant/Contale";
 import { clearProfile } from "@/app/actions/session";
 import { useHousehold } from "@/components/HouseholdProvider";
 import { MemberAvatar } from "@/components/ui/MemberChip";
@@ -15,6 +16,7 @@ export function Header() {
   const router = useRouter();
   const { me, members } = useHousehold();
   const [pending, start] = useTransition();
+  const contale = useContale();
 
   return (
     <div className="flex items-center justify-between px-4 pt-4">
@@ -25,7 +27,18 @@ export function Header() {
           <span className="text-coral">bug</span>
         </span>
       </Link>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center">
+        {/* Micrófono global: desde cualquier pantalla, contale a Lovebug lo que pasa. */}
+        {contale && (
+          <button
+            type="button"
+            aria-label="Contale a Lovebug"
+            onClick={() => contale({ listen: true })}
+            className="flex h-11 w-11 items-center justify-center rounded-full text-coral active:bg-coral-soft"
+          >
+            <Mic size={19} />
+          </button>
+        )}
         <ThemeToggle />
         <Link
           href="/familia"

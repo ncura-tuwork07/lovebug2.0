@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BellRing, CalendarHeart, CarFront, CheckCircle2, ChefHat, Mic, PartyPopper, Pencil, PiggyBank, ShoppingCart, Sparkles, Square, Undo2, type LucideIcon } from "lucide-react";
@@ -30,9 +30,44 @@ const THINKING = ["Leyendo lo que me contaste…", "Ubicando cada cosa en su dí
 type Stage = "input" | "thinking" | "review" | "saving" | "done";
 type Row = PlanItem & { key: number; on: boolean };
 
+// Contale se abre desde cualquier pantalla (el micrófono de arriba) o desde la tarjeta de Hoy.
+type OpenContale = (options?: { listen?: boolean }) => void;
+const ContaleContext = createContext<OpenContale | null>(null);
+export const useContale = () => useContext(ContaleContext);
+
+// Vive en el layout de la app: una sola hoja de Contale para todas las pantallas. Sin la IA
+// configurada, el contexto queda en null y no se muestra ningún acceso.
+export function ContaleProvider({ enabled, members, today, children }: { enabled: boolean; members: Member[]; today: string; children: ReactNode }) {
+  const [request, setRequest] = useState<{ n: number; listen: boolean } | null>(null);
+  const open = useCallback<OpenContale>((options) => setRequest((r) => ({ n: (r?.n ?? 0) + 1, listen: Boolean(options?.listen) })), []);
+  return (
+    <ContaleContext.Provider value={enabled ? open : null}>
+      {children}
+      {enabled && <Contale members={members} today={today} request={request} />}
+    </ContaleContext.Provider>
+  );
+}
+
+// La tarjeta grande de Hoy.
+export function ContaleCard() {
+  const open = useContale();
+  if (!open) return null;
+  return (
+    <button type="button" onClick={() => open()} className="lb-card flex items-center gap-3 !bg-coral-soft text-left">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-coral text-white">
+        <Mic size={22} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-h2 font-bold text-ink">Contale a Lovebug</span>
+        <span className="block text-meta text-ink-soft">Decime qué tienen hoy o esta semana, o qué cambió: lo cargo, lo muevo o lo cancelo.</span>
+      </span>
+    </button>
+  );
+}
+
 // "Contale a Lovebug": hablás o escribís lo que tenés hoy y los próximos días; la IA lo reparte
 // en calendario, logística, tareas, compras, vencimientos y menú, y vos aprobás antes de cargar.
-export function Contale({ members, today }: { members: Member[]; today: string }) {
+function Contale({ members, today, request }: { members: Member[]; today: string; request: { n: number; listen: boolean } | null }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [stage, setStage] = useState<Stage>("input");
@@ -47,6 +82,14 @@ export function Contale({ members, today }: { members: Member[]; today: string }
   const [tick, setTick] = useState(0);
   const [live, setLive] = useState<Live>({ summary: null, items: [] });
   const dictation = useDictation(text, setText);
+
+  useEffect(() => {
+    if (!request) return;
+    setOpen(true);
+    if (request.listen && stage === "input" && dictation.supported && !dictation.listening) dictation.start();
+    // Solo cuando llega un pedido nuevo (cada toque del micrófono o de la tarjeta).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [request?.n]);
 
   useEffect(() => {
     try {
@@ -127,16 +170,6 @@ export function Contale({ members, today }: { members: Member[]; today: string }
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="lb-card flex items-center gap-3 !bg-coral-soft text-left">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-coral text-white">
-          <Mic size={22} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block font-display text-h2 font-bold text-ink">Contale a Lovebug</span>
-          <span className="block text-meta text-ink-soft">Decime qué tienen hoy o esta semana, o qué cambió: lo cargo, lo muevo o lo cancelo.</span>
-        </span>
-      </button>
-
       <BottomSheet open={open} onClose={close} title={stage === "review" || stage === "saving" ? "Esto entendí" : stage === "done" ? "¡Listo!" : "Contale a Lovebug"}>
         {stage === "input" && (
           <div className="flex flex-col gap-4">
