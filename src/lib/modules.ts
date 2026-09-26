@@ -4,6 +4,7 @@ import {
   CarFront,
   ChefHat,
   Contact,
+  House,
   ListChecks,
   MapPin,
   Package,
@@ -44,6 +45,7 @@ export const MODULES: ModuleDef[] = [
   { key: "proyectos", href: "/proyectos", label: "Metas y proyectos", desc: "Hoy, semana, mes, 3 meses", icon: ListChecks, color: "#EC4899" },
   { key: "puntos", href: "/puntos", label: "Puntos y premios", desc: "Tareas de los chicos con recompensas", icon: Star, color: "#10B981" },
   { key: "mapa", href: "/mapa", label: "Mapa", desc: "Dónde está cada uno", icon: MapPin, color: "#3B82F6" },
+  { key: "casa", href: "/casa", label: "Casa", desc: "El plano y en qué ambiente está cada uno", icon: House, color: "#D97706" },
 ];
 
 export function isModuleEnabled(settings: HouseholdSettings | null | undefined, key: string): boolean {
