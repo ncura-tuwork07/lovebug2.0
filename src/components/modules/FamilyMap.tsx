@@ -18,6 +18,12 @@ function ago(iso: string): string {
   return `hace ${Math.round(h / 24)} d`;
 }
 
+// Sin la app abierta no hay señal nueva (ninguna PWA puede rastrear en segundo plano sin permiso
+// nativo) — pero la última posición conocida sigue siendo útil, así que nunca se borra ni se
+// esconde. Esto solo marca visualmente que ya no es una posición "en vivo".
+const STALE_MS = 3 * 60 * 60 * 1000;
+const isStale = (iso: string) => Date.now() - Date.parse(iso) > STALE_MS;
+
 export function FamilyMap({
   members,
   locations,
@@ -92,11 +98,13 @@ export function FamilyMap({
           m.photo_url ? `<img src="${m.photo_url}" style="width:100%;height:100%;object-fit:cover" alt="" />` : m.name.slice(0, 1)
         }</div>`;
         const icon = L.divIcon({ html, className: "", iconSize: [38, 38], iconAnchor: [19, 19] });
-        const popup = `<b>${m.name}</b><br/>${ago(loc.updated_at)}${loc.accuracy ? ` · ±${Math.round(loc.accuracy)} m` : ""}`;
+        const stale = isStale(loc.updated_at);
+        const popup = `<b>${m.name}</b><br/>${stale ? "Última posición conocida: " : ""}${ago(loc.updated_at)}${loc.accuracy ? ` · ±${Math.round(loc.accuracy)} m` : ""}`;
+        const opacity = stale ? 0.55 : 1;
         if (markers.current[m.id]) {
-          markers.current[m.id].setLatLng([loc.lat, loc.lng]).setIcon(icon).setPopupContent(popup);
+          markers.current[m.id].setLatLng([loc.lat, loc.lng]).setIcon(icon).setPopupContent(popup).setOpacity(opacity);
         } else {
-          markers.current[m.id] = L.marker([loc.lat, loc.lng], { icon }).addTo(map).bindPopup(popup);
+          markers.current[m.id] = L.marker([loc.lat, loc.lng], { icon, opacity }).addTo(map).bindPopup(popup);
         }
       }
       for (const id of Object.keys(markers.current)) {
@@ -105,8 +113,10 @@ export function FamilyMap({
           delete markers.current[id];
         }
       }
+      // Si mostramos a todos (encuadre inicial) o si alguien quedó fuera de la vista actual —no
+      // solo el primero del objeto—, reencuadramos para no dejar a nadie afuera sin que se note.
       const pts = Object.values(locs).map((l) => [l.lat, l.lng] as [number, number]);
-      if (pts.length > 0 && !map.getBounds().contains(pts[0])) {
+      if (pts.length > 0 && !pts.every((p) => map.getBounds().contains(p))) {
         map.fitBounds(L.latLngBounds(pts).pad(0.3), { maxZoom: 15 });
       }
     })();
@@ -154,8 +164,12 @@ export function FamilyMap({
               <MemberAvatar member={m} size={36} />
               <div className="min-w-0 flex-1">
                 <p className="text-item font-medium text-ink">{m.name}</p>
-                <p className="text-meta text-ink-faint">
-                  {loc ? `Última ubicación ${ago(loc.updated_at)}` : m.share_location ? "Compartiendo, sin señal todavía" : "No comparte ubicación"}
+                <p className={`text-meta ${loc && isStale(loc.updated_at) ? "text-amber" : "text-ink-faint"}`}>
+                  {loc
+                    ? `${isStale(loc.updated_at) ? "Última posición conocida" : "Última ubicación"} ${ago(loc.updated_at)}`
+                    : m.share_location
+                      ? "Compartiendo, sin señal todavía"
+                      : "No comparte ubicación"}
                 </p>
               </div>
               {loc && (
