@@ -146,7 +146,6 @@ export function ProfileView({
           ref={photoInput}
           type="file"
           accept="image/*"
-          capture="user"
           hidden
           onChange={(e) => e.target.files?.[0] && onPhoto(e.target.files[0])}
         />

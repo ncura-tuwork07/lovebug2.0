@@ -2,9 +2,18 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { trackUsage } from "@/app/actions/household";
+
+function send(path: string, installed: boolean) {
+  fetch("/api/track", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path, installed }),
+    keepalive: true,
+  }).catch(() => {});
+}
 
 // Registra qué pantallas se usan y si la app está instalada (solo métricas agregadas del panel de admin).
+// Se manda un toque después de llegar a la pantalla, para no competir con su carga.
 export function UsageTracker() {
   const pathname = usePathname();
   const last = useRef<{ path: string; at: number } | null>(null);
@@ -17,11 +26,12 @@ export function UsageTracker() {
     const installed =
       window.matchMedia?.("(display-mode: standalone)").matches ||
       (navigator as Navigator & { standalone?: boolean }).standalone === true;
-    trackUsage(pathname, installed).catch(() => {});
+    const t = setTimeout(() => send(pathname, installed), 1500);
+    return () => clearTimeout(t);
   }, [pathname]);
 
   useEffect(() => {
-    const onInstalled = () => trackUsage(window.location.pathname, true).catch(() => {});
+    const onInstalled = () => send(window.location.pathname, true);
     window.addEventListener("appinstalled", onInstalled);
     return () => window.removeEventListener("appinstalled", onInstalled);
   }, []);

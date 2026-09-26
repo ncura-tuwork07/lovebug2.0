@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getUnlockOptions, verifyAppUnlock } from "@/app/actions/appLock";
 import { deviceHasPasskey, rememberDevicePasskey } from "@/lib/passkeyClient";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { LadybugLoader } from "@/components/ui/LadybugLoader";
 
 // Si algo se traba (red lenta, el celu no devuelve la huella), el botón se libera solo.
 const WATCHDOG_MS = 20_000;
@@ -15,6 +16,7 @@ export function AppLockScreen({ next }: { next: string }) {
   // null mientras se chequea localStorage, para no mostrar el botón que no corresponde ni un instante.
   const [hasPasskey, setHasPasskey] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
+  const [entering, setEntering] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => setHasPasskey(deviceHasPasskey()), []);
@@ -23,6 +25,7 @@ export function AppLockScreen({ next }: { next: string }) {
     if (!busy) return;
     const t = setTimeout(() => {
       setBusy(false);
+      setEntering(false);
       setError("Tardó demasiado. Probá de nuevo o entrá con tu contraseña.");
     }, WATCHDOG_MS);
     return () => clearTimeout(t);
@@ -34,12 +37,14 @@ export function AppLockScreen({ next }: { next: string }) {
     try {
       const { options, challengeId } = await getUnlockOptions();
       const response = await startAuthentication({ optionsJSON: options });
+      setEntering(true);
       await verifyAppUnlock({ challengeId, response });
       rememberDevicePasskey(response.id);
       // Navegación completa (no la del router): arranca de cero con la cookie recién puesta.
       window.location.replace(next);
     } catch (e) {
       setBusy(false);
+      setEntering(false);
       if (e instanceof Error && e.name === "NotAllowedError") return; // canceló la huella
       setError(e instanceof Error && e.message ? e.message : "No pudimos confirmar la huella. Probá de nuevo.");
     }
@@ -78,6 +83,11 @@ export function AppLockScreen({ next }: { next: string }) {
           </button>
         )}
       </div>
+      {entering && (
+        <div className="lb-fade-in fixed inset-0 z-50 flex items-center justify-center bg-[#1E293B]/95">
+          <LadybugLoader variant="dark" label="Entrando…" size={34} />
+        </div>
+      )}
     </AuthShell>
   );
 }

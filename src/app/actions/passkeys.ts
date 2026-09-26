@@ -10,6 +10,7 @@ import {
   type RegistrationResponseJSON,
 } from "@simplewebauthn/server";
 import { isoBase64URL, isoUint8Array } from "@simplewebauthn/server/helpers";
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { getOrigin, getRpID, RP_NAME } from "@/lib/webauthn";
 import { markDeviceUnlocked } from "@/lib/appLock";
@@ -94,7 +95,11 @@ export async function getPasskeyLoginOptions() {
   return { options, challengeId };
 }
 
-export async function verifyPasskeyLogin(input: { challengeId: string; response: AuthenticationResponseJSON }): Promise<{ email: string; token: string }> {
+// Verifica la huella y abre la sesión acá mismo, en el servidor (igual que /auth/callback con los
+// links de email). Antes se devolvía el hashed_token al navegador y se lo pasaba a verifyOtp como
+// si fuera el código de 6 dígitos: Supabase lo volvía a hashear, no coincidía nunca y el login con
+// huella fallaba siempre con "No pudimos iniciar sesión".
+export async function verifyPasskeyLogin(input: { challengeId: string; response: AuthenticationResponseJSON }): Promise<void> {
   const admin = requireAdmin();
   const { challenge } = await consumeChallenge(admin, input.challengeId);
 
@@ -130,7 +135,14 @@ export async function verifyPasskeyLogin(input: { challengeId: string; response:
 
   const { data: link, error: linkError } = await admin.auth.admin.generateLink({ type: "magiclink", email: userData.user.email });
   if (linkError) throw new Error(linkError.message);
+
+  const supabase = await createClient();
+  const { error: otpError } = await supabase.auth.verifyOtp({
+    type: link.properties.verification_type as EmailOtpType,
+    token_hash: link.properties.hashed_token,
+  });
+  if (otpError) throw new Error("No pudimos iniciar sesión con la huella. Probá con tu email y contraseña.");
+
   // Ya mostró la huella recién: no hace falta pedírsela de nuevo apenas entre.
   await markDeviceUnlocked(saved.user_id as string);
-  return { email: userData.user.email, token: link.properties.hashed_token };
 }

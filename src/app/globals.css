@@ -124,4 +124,19 @@
   .lb-chip   { @apply text-xs font-semibold rounded-full px-2.5 py-1; }
   .lb-nav    { @apply fixed inset-x-0 bottom-0 bg-surface border-t border-line shadow-nav
                        pt-2 pb-[calc(16px+env(safe-area-inset-bottom))]; }
+
+  /* La mariquita del logo volando en círculos: el cartel de "cargando" de toda la app. */
+  .lb-orbit   { animation: lb-orbit 1.4s linear infinite; }
+  .lb-flutter { animation: lb-flutter 0.16s ease-in-out infinite alternate; }
+  .lb-fade-in { animation: lb-fade-in 0.2s ease-out both; }
+}
+
+@keyframes lb-orbit   { to { transform: rotate(360deg); } }
+@keyframes lb-flutter { from { transform: rotate(90deg) scale(1, 1); } to { transform: rotate(90deg) scale(0.9, 1.08); } }
+@keyframes lb-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes lb-pulse   { 50% { opacity: 0.45; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-orbit   { animation: none; }
+  .lb-flutter { animation: lb-pulse 1.2s ease-in-out infinite; transform: rotate(90deg); }
 }

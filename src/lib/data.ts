@@ -1,6 +1,5 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
-import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { Contact, Household, Member, UserPasskey } from "@/lib/types";
 
@@ -41,7 +40,7 @@ export async function getPasskeys(): Promise<UserPasskey[]> {
 // dispositivo todavía no eligió, no hay "yo" y el layout manda al selector — así entra cualquiera
 // que use el mismo login (como en Netflix), sin asumir que sos el dueño de la cuenta.
 // Recibe el usuario ya resuelto (por getSessionContext) para no volver a pedirlo a Supabase Auth.
-async function getCurrentMember(members: Member[], user: User | null): Promise<Member | null> {
+async function getCurrentMember(members: Member[], user: SessionUser | null): Promise<Member | null> {
   if (!user) return null;
   const store = await cookies();
   const activeId = store.get(PROFILE_COOKIE)?.value;
@@ -59,8 +58,15 @@ export const getHousehold = cache(async (): Promise<Household | null> => {
   return { ...data, settings: data.settings ?? {} } as Household;
 });
 
+// Lo que las pantallas usan del usuario, sacado del token ya verificado (getClaims).
+export type SessionUser = {
+  id: string;
+  email: string | null;
+  user_metadata: Record<string, unknown>;
+};
+
 export type SessionContext = {
-  user: User | null;
+  user: SessionUser | null;
   members: Member[];
   me: Member | null;
   household: Household | null;
@@ -71,10 +77,18 @@ export type SessionContext = {
 // llamarla de nuevo en una página, después de que el layout ya la llamó, sea gratis.
 // Pedimos el usuario y los datos del hogar en paralelo (no uno después del otro): si no hay sesión,
 // RLS simplemente no devuelve filas, así que no perdemos nada por adelantar esas consultas.
+// getClaims en vez de getUser: el middleware ya validó la sesión en este mismo pedido, y con
+// claves asimétricas esto verifica el token sin otra ida y vuelta a Supabase Auth.
 export const getSessionContext = cache(async (): Promise<SessionContext> => {
   const supabase = await createClient();
-  const [{ data: { user } }, members, household] = await Promise.all([supabase.auth.getUser(), getMembers(), getHousehold()]);
-  if (!user) return { user: null, members: [], me: null, household: null };
+  const [{ data: claimsData }, members, household] = await Promise.all([supabase.auth.getClaims(), getMembers(), getHousehold()]);
+  const claims = claimsData?.claims;
+  if (!claims?.sub) return { user: null, members: [], me: null, household: null };
+  const user: SessionUser = {
+    id: claims.sub,
+    email: typeof claims.email === "string" ? claims.email : null,
+    user_metadata: (claims.user_metadata as Record<string, unknown> | undefined) ?? {},
+  };
   const me = await getCurrentMember(members, user);
   return { user, members, me, household };
 });

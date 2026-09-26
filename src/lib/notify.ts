@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { broadcastPush, type PushPayload } from "@/lib/push";
 import { buildWeeklySummary } from "@/lib/summary";
+import { ensureDailyContent } from "@/lib/daily";
 import { addDays, formatARS, monthRange, shortTime, todayAR, TZ } from "@/lib/format";
 import { upcomingDates } from "@/lib/dates";
 import { EXPENSE_CATEGORIES } from "@/lib/labels";
@@ -33,6 +34,8 @@ const toMinutes = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 
 export async function runJob(job: Job): Promise<{ sent: number; notes: string[] }> {
   const admin = createAdminClient();
   if (!admin) return { sent: 0, notes: ["sin SUPABASE_SERVICE_ROLE_KEY"] };
+  // A la mañana dejamos lista la inspiración del día (Evangelio + Claude), para que nadie la espere en Hoy.
+  const daily = job === "daily" ? ensureDailyContent(todayAR()) : null;
   const { data: households } = await admin.from("households").select("id, name");
   let sent = 0;
   const notes: string[] = [];
@@ -41,6 +44,7 @@ export async function runJob(job: Job): Promise<{ sent: number; notes: string[] 
     sent += r.sent;
     notes.push(`${h.name}: ${r.notes.join(", ")}`);
   }
+  if (daily) await daily;
   return { sent, notes };
 }
 

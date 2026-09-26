@@ -1,6 +1,9 @@
 import "server-only";
+import { cache } from "react";
+import { after } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getFallbackContent } from "@/lib/content/daily";
 import { fallbackHoroscopes } from "@/lib/content/horoscope";
 import { ZODIAC, ZODIAC_KEYS, type ZodiacKey } from "@/lib/zodiac";
@@ -168,36 +171,70 @@ async function generateWithClaude(input: {
   }
 }
 
-export async function getDailyContent(day: string): Promise<DailyContent> {
-  const supabase = await createClient();
+function fallbackContent(day: string): DailyContent {
+  const fallback = getFallbackContent(new Date(`${day}T12:00:00-03:00`));
+  return {
+    day,
+    verse_text: fallback.verse.verse,
+    verse_reference: fallback.verse.reference,
+    reflection: fallback.verse.reflection,
+    prayer_title: fallback.prayer.title,
+    prayer_text: fallback.prayer.text,
+    saint: null,
+    horoscope: fallback.horoscope,
+    source: "fallback",
+  };
+}
 
-  const date = new Date(`${day}T12:00:00-03:00`);
+// Lo que ve Hoy: una sola consulta a la tabla (compartida por todos los hogares). Si todavía no se
+// generó el contenido del día, devolvemos el banco curado AL INSTANTE y lo generamos en segundo
+// plano — antes la pantalla esperaba a Evangelizo, a los 12 horóscopos y a Claude (20-40 s la
+// primera carga del día, y hasta 8 s en cada carga si Evangelizo no respondía).
+export const getDailyContent = cache(async (day: string): Promise<DailyContent> => {
+  const supabase = await createClient();
   const { data: cached } = await supabase.from("daily_content").select("*").eq("day", day).maybeSingle();
   if (cached) {
     // Completa signos que falten en el cache (por ejemplo, filas guardadas cuando solo había dos).
     const c = cached as DailyContent;
-    return { ...c, horoscope: { ...fallbackHoroscopes(date), ...(c.horoscope ?? {}) } };
+    return { ...c, horoscope: { ...fallbackHoroscopes(new Date(`${day}T12:00:00-03:00`)), ...(c.horoscope ?? {}) } };
   }
+  after(() => ensureDailyContent(day));
+  return fallbackContent(day);
+});
+
+// Genera y guarda el contenido del día (lo llama el cron diario temprano y, por las dudas, Hoy en
+// segundo plano). Una sola generación a la vez por día en cada servidor, y si Evangelizo falla no
+// se reintenta en cada carga sino cada 10 minutos.
+const inFlight = new Map<string, Promise<void>>();
+const lastFailure = new Map<string, number>();
+const RETRY_AFTER_MS = 10 * 60_000;
+
+export function ensureDailyContent(day: string): Promise<void> {
+  const running = inFlight.get(day);
+  if (running) return running;
+  if (Date.now() - (lastFailure.get(day) ?? 0) < RETRY_AFTER_MS) return Promise.resolve();
+  const job = generateAndStore(day)
+    .catch((e) => {
+      lastFailure.set(day, Date.now());
+      console.error("[daily] generation failed:", e instanceof Error ? e.message : e);
+    })
+    .finally(() => inFlight.delete(day));
+  inFlight.set(day, job);
+  return job;
+}
+
+async function generateAndStore(day: string): Promise<void> {
+  // Service role: corre fuera del pedido del usuario (cron o after()), sin cookies de sesión.
+  const admin = createAdminClient();
+  if (!admin) return;
+  const { data: existing } = await admin.from("daily_content").select("day").eq("day", day).maybeSingle();
+  if (existing) return;
 
   const [ev, horoscopesEn] = await Promise.all([fetchEvangelizo(day), fetchAllHoroscopesEn()]);
+  // Sin Evangelizo no guardamos nada: se reintenta más tarde y mientras tanto se ve el banco curado.
+  if (!ev) throw new Error("Evangelizo no respondió");
 
-  const fallback = getFallbackContent(date);
-
-  // Si Evangelizo no respondió, devolvemos el banco curado sin cachear, para reintentar en la próxima carga.
-  if (!ev) {
-    return {
-      day,
-      verse_text: fallback.verse.verse,
-      verse_reference: fallback.verse.reference,
-      reflection: fallback.verse.reflection,
-      prayer_title: fallback.prayer.title,
-      prayer_text: fallback.prayer.text,
-      saint: null,
-      horoscope: fallback.horoscope,
-      source: "fallback",
-    };
-  }
-
+  const fallback = getFallbackContent(new Date(`${day}T12:00:00-03:00`));
   const generated = await generateWithClaude({
     day,
     liturgic_title: ev.liturgic_title,
@@ -225,6 +262,5 @@ export async function getDailyContent(day: string): Promise<DailyContent> {
     source: generated ? "evangelizo+claude" : "evangelizo",
   };
 
-  await supabase.from("daily_content").upsert(content, { onConflict: "day" });
-  return content;
+  await admin.from("daily_content").upsert(content, { onConflict: "day" });
 }

@@ -78,23 +78,6 @@ export async function regenerateInviteCode(): Promise<string> {
   return data as string;
 }
 
-// Uso: registra la pantalla visitada y la última actividad (para el panel de admin).
-export async function trackUsage(path: string, installed: boolean): Promise<void> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-  const now = new Date().toISOString();
-  await Promise.all([
-    supabase.from("usage_events").insert({ user_id: user.id, path: path.slice(0, 120) }),
-    supabase.from("profiles").update({ last_seen_at: now }).eq("user_id", user.id),
-    installed
-      ? supabase.from("profiles").update({ installed_at: now }).eq("user_id", user.id).is("installed_at", null)
-      : Promise.resolve(null),
-  ]);
-}
-
 // Qué ver cada mañana en Hoy: tradición (o ninguna) y horóscopo.
 export async function setInspiration(input: { tradition: Tradition; horoscope: boolean; otherLabel?: string }): Promise<void> {
   await mergeSettings((s) => ({

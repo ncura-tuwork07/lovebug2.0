@@ -1,19 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Fingerprint } from "lucide-react";
 import { browserSupportsWebAuthn, startAuthentication } from "@simplewebauthn/browser";
-import { createClient } from "@/lib/supabase/client";
 import { getPasskeyLoginOptions, verifyPasskeyLogin } from "@/app/actions/passkeys";
 import { deviceHasPasskey, forgetDevicePasskey, rememberDevicePasskey } from "@/lib/passkeyClient";
+import { LadybugLoader } from "@/components/ui/LadybugLoader";
 
 // Solo aparece en dispositivos donde ya se activó la huella (si no, el celu diría
 // "no hay llaves de acceso"). La primera vez se entra con contraseña y ahí se ofrece activarla.
 export function PasskeyLoginButton({ next, onError }: { next: string; onError: (message: string | null) => void }) {
-  const router = useRouter();
   const [available, setAvailable] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "waiting" | "entering">("idle");
 
   useEffect(() => setAvailable(browserSupportsWebAuthn() && deviceHasPasskey()), []);
 
@@ -21,17 +19,17 @@ export function PasskeyLoginButton({ next, onError }: { next: string; onError: (
 
   async function handleClick() {
     onError(null);
-    setBusy(true);
+    setPhase("waiting");
     try {
       const { options, challengeId } = await getPasskeyLoginOptions();
       const response = await startAuthentication({ optionsJSON: options });
-      const { email, token } = await verifyPasskeyLogin({ challengeId, response });
-      const { error } = await createClient().auth.verifyOtp({ email, token, type: "magiclink" });
-      if (error) throw new Error("No pudimos iniciar sesión. Probá con tu email y contraseña.");
+      setPhase("entering");
+      // El servidor verifica la huella y deja la sesión abierta (cookies) en la misma respuesta.
+      await verifyPasskeyLogin({ challengeId, response });
       rememberDevicePasskey(response.id);
-      router.push(next.startsWith("/") ? next : "/");
-      router.refresh();
+      window.location.replace(next.startsWith("/") ? next : "/");
     } catch (e) {
+      setPhase("idle");
       if (e instanceof Error && e.name === "NotAllowedError") return; // canceló la huella
       const message = e instanceof Error ? e.message : "";
       // La llave se borró desde Ajustes (o desde otro dispositivo): dejamos de ofrecer el botón acá.
@@ -42,8 +40,6 @@ export function PasskeyLoginButton({ next, onError }: { next: string; onError: (
         return;
       }
       onError(message || "No pudimos entrar con la huella. Probá con tu email y contraseña.");
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -54,12 +50,17 @@ export function PasskeyLoginButton({ next, onError }: { next: string; onError: (
       </div>
       <button
         type="button"
-        disabled={busy}
+        disabled={phase !== "idle"}
         onClick={handleClick}
         className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md border-[1.5px] border-white/25 px-4 text-sm font-semibold text-white disabled:opacity-50"
       >
-        <Fingerprint size={18} /> {busy ? "Esperando tu huella…" : "Entrar con huella"}
+        <Fingerprint size={18} /> {phase === "waiting" ? "Esperando tu huella…" : "Entrar con huella"}
       </button>
+      {phase === "entering" && (
+        <div className="lb-fade-in fixed inset-0 z-50 flex items-center justify-center bg-[#1E293B]/95">
+          <LadybugLoader variant="dark" label="Entrando…" size={34} />
+        </div>
+      )}
     </>
   );
 }

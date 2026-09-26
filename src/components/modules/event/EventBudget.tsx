@@ -131,7 +131,6 @@ export function EventBudget({
               ref={fileRef}
               type="file"
               accept="image/*,application/pdf"
-              capture="environment"
               className="hidden"
               onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
             />

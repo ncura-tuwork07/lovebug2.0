@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { LadybugLoader } from "@/components/ui/LadybugLoader";
 import { BellRing, CalendarHeart, CarFront, ChefHat, ChevronRight, ClipboardList, MapPin, PartyPopper, ShoppingCart } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionContext } from "@/lib/data";
@@ -22,7 +24,7 @@ export default async function HoyPage() {
   const in7 = addDays(today, 7);
   const dow = new Date(`${today}T12:00:00-03:00`).getUTCDay(); // 0 = domingo
 
-  const [{ members, me, household }, tasksRes, tripsRes, eventsRes, remRes, datesRes, mealsRes, shopRes, famRes] = await Promise.all([
+  const [{ members, me, household }, tasksRes, tripsRes, eventsRes, remRes, datesRes, mealsRes, shopRes, famRes, summary] = await Promise.all([
     getSessionContext(),
     supabase.from("daily_tasks").select("*").lte("due_date", today).order("done").order("created_at"),
     supabase.from("logistics_trips").select("*").eq("trip_date", today).order("departure_time", { nullsFirst: false }),
@@ -37,6 +39,7 @@ export default async function HoyPage() {
     supabase.from("meal_plans").select("*").eq("day", today),
     supabase.from("shopping_items").select("id", { count: "exact", head: true }).eq("checked", false),
     supabase.from("family_events").select("id, title, event_date, guests").eq("status", "planning").gte("event_date", today).lte("event_date", addDays(today, 30)).order("event_date"),
+    dow === 0 || dow === 1 ? computeWeeklySummary(supabase, today) : null,
   ]);
   const on = (key: string) => isModuleEnabled(household?.settings, key);
 
@@ -48,7 +51,6 @@ export default async function HoyPage() {
   const meals = (mealsRes.data ?? []) as MealPlan[];
   const pendingShopping = shopRes.count ?? 0;
   const famEvents = (famRes.data ?? []) as Pick<FamilyEvent, "id" | "title" | "event_date" | "guests">[];
-  const summary = dow === 0 || dow === 1 ? await computeWeeklySummary(supabase, today) : null;
 
   const heading = new Date(`${today}T12:00:00-03:00`).toLocaleDateString("es-AR", {
     weekday: "long",
@@ -157,7 +159,10 @@ export default async function HoyPage() {
         </section>
       )}
 
-      <DailyInspiration members={members} settings={household?.settings ?? null} />
+      {/* Aparte (streaming): si la inspiración tarda, el resto de Hoy ya está en pantalla. */}
+      <Suspense fallback={<LadybugLoader label="Buscando la inspiración de hoy…" className="py-6" />}>
+        <DailyInspiration members={members} settings={household?.settings ?? null} />
+      </Suspense>
     </div>
   );
 }

@@ -41,13 +41,15 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims (lo que recomienda Supabase para el middleware): con claves de firma asimétricas
+  // verifica el token acá mismo, sin ir a la red en cada pedido; con la clave clásica consulta al
+  // servidor como getUser. En los dos casos renueva la sesión si está por vencer.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub ?? null;
 
   const { pathname } = request.nextUrl;
 
-  if (!user) {
+  if (!userId) {
     // Sin sesión, la raíz muestra la landing (misma URL, sin redirigir).
     if (pathname === "/") {
       const url = request.nextUrl.clone();
@@ -78,7 +80,7 @@ export async function updateSession(request: NextRequest) {
   // una pantalla que ya se mostró, y si las redirigimos acá se rompen a mitad de camino (por
   // ejemplo, perder lo que alguien tipeó al crear el hogar porque tardó más de un minuto en cargar).
   if (appLockEnabled() && request.method === "GET" && pathname !== LOCK_PATH && !startsWithAny(pathname, PUBLIC_PREFIXES)) {
-    const unlocked = await verifyUnlock(request.cookies.get(APP_LOCK_COOKIE)?.value, user.id);
+    const unlocked = await verifyUnlock(request.cookies.get(APP_LOCK_COOKIE)?.value, userId);
     if (!unlocked) {
       const url = request.nextUrl.clone();
       url.pathname = LOCK_PATH;
@@ -86,7 +88,7 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
     // Sigue activo: renovamos el vencimiento, como la sesión de Supabase.
-    const refreshed = await signUnlock(user.id);
+    const refreshed = await signUnlock(userId);
     if (refreshed) {
       supabaseResponse.cookies.set(APP_LOCK_COOKIE, refreshed, {
         httpOnly: true,
