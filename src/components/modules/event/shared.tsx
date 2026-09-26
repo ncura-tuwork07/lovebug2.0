@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -30,7 +30,7 @@ export function useRun() {
 export function SectionTitle({ icon, color, children, action }: { icon: ReactNode; color: string; children: ReactNode; action?: ReactNode }) {
   return (
     <div className="mb-2 flex items-center justify-between gap-2">
-      <h2 className="text-h2 flex items-center gap-2 font-display uppercase tracking-wide" style={{ color }}>
+      <h2 className="lb-tint text-h2 flex items-center gap-2 font-display uppercase tracking-wide" style={{ "--tint": color } as CSSProperties}>
         {icon} {children}
       </h2>
       {action}

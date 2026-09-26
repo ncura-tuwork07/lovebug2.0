@@ -57,9 +57,9 @@ export function Header() {
                 router.push("/perfil");
               })
             }
-            className="ml-1 disabled:opacity-50"
+            className="flex h-11 w-11 items-center justify-center disabled:opacity-50"
           >
-            <MemberAvatar member={me} size={30} />
+            <MemberAvatar member={me} size={32} />
           </button>
         )}
       </div>

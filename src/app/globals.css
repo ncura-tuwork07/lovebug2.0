@@ -11,8 +11,8 @@
   /* ── Neutros cálidos ───────────────── */
   --color-ink:          #1E293B;
   --color-ink-soft:     #5B5350;
-  --color-ink-faint:    #8A7A75;
-  --color-ink-ghost:    #9A8C87;
+  --color-ink-faint:    #6E605B;
+  --color-ink-ghost:    #7C6D68;
   --color-cream:        #FFF6F1;   /* fondo de la app */
   --color-surface:      #FFFFFF;
   --color-line:         #F2E4DC;
@@ -82,8 +82,8 @@
   color-scheme: dark;
   --color-ink:          #F4EEE9;
   --color-ink-soft:     #CFC6BF;
-  --color-ink-faint:    #A0958E;
-  --color-ink-ghost:    #7E746D;
+  --color-ink-faint:    #ADA39C;
+  --color-ink-ghost:    #9A8F88;
   --color-cream:        #131A29;
   --color-surface:      #1E293B;
   --color-line:         #2E3A50;
@@ -144,3 +144,37 @@
   .lb-orbit   { animation: none; }
   .lb-flutter { animation: lb-pulse 1.2s ease-in-out infinite; transform: rotate(90deg); }
 }
+
+/* Texto chico de color que se lea (contraste AA): en claro los acentos van un poco más oscuros y en
+   oscuro un poco más claros. Solo el texto: fondos, bordes y botones mantienen la paleta de marca.
+   Va fuera de las capas para ganarle a las utilidades de Tailwind. .lb-on-dark: pantallas con fondo
+   oscuro fijo (login, bloqueo), que usan los tonos de noche aunque el tema sea claro. */
+:root {
+  --text-coral: #CC353B;
+  --text-info: #2563EB;
+  --text-success: #047857;
+  --text-amber: #B45309;
+  --text-danger: #C81E1E;
+}
+[data-theme="dark"],
+.lb-on-dark {
+  --text-coral: #FF6B70;
+  --text-info: #60A5FA;
+  --text-success: #34D399;
+  --text-amber: #FFB347;
+  --text-danger: #F87171;
+}
+.text-coral   { color: var(--text-coral); }
+.text-info    { color: var(--text-info); }
+.text-success { color: var(--text-success); }
+.text-amber   { color: var(--text-amber); }
+.text-danger  { color: var(--text-danger); }
+
+/* Colores propios (de un módulo, una categoría): style={{ "--tint": "#F59E0B" }}. En claro se
+   oscurece y en oscuro se aclara lo justo para que se lea (o usa --tint-dark si lo hay). */
+.lb-tint { color: color-mix(in srgb, var(--tint) 55%, #000); }
+[data-theme="dark"] .lb-tint,
+.lb-on-dark .lb-tint { color: var(--tint-dark, color-mix(in srgb, var(--tint) 70%, #fff)); }
+
+/* Los + y − del mapa, del tamaño de un dedo. */
+.leaflet-touch .leaflet-bar a { width: 40px !important; height: 40px !important; line-height: 40px !important; }

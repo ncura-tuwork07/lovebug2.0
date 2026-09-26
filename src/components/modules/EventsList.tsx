@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type CSSProperties, type FormEvent } from "react";
 import Link from "next/link";
 import { BellRing, Cake, Heart, MapPin, Star } from "lucide-react";
 import type { CalendarEvent, EventCategory, Member } from "@/lib/types";
@@ -113,7 +113,7 @@ export function EventsList({
         <div className="min-w-0 flex-1">
           <p className="text-item font-medium text-ink">{x.title}</p>
           <p className="text-meta text-ink-faint">
-            <span className="font-semibold" style={{ color: style.color }}>
+            <span className="lb-tint font-semibold" style={{ "--tint": style.color } as CSSProperties}>
               {style.label}
             </span>
             {x.detail ? ` · ${x.detail}` : ""}
@@ -151,7 +151,7 @@ export function EventsList({
           <div className="min-w-0 flex-1">
             <p className="text-item font-medium text-ink">{ev.title}</p>
             <p className="flex flex-wrap items-center gap-x-2 text-meta text-ink-faint">
-              <span className="font-semibold" style={{ color: cat.fg }}>
+              <span className="lb-tint font-semibold" style={{ "--tint": cat.hex, "--tint-dark": cat.hex === "#1E293B" ? "#A9B6CC" : undefined } as CSSProperties}>
                 {cat.name}
               </span>
               {ev.location && (

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionContext } from "@/lib/data";
 import { isAppAdmin } from "@/lib/admin";
@@ -22,7 +23,7 @@ export default async function CasaPage() {
   return (
     <div className="flex flex-col gap-5 px-4 pt-6">
       <header>
-        <p className="text-sm" style={{ color: "#D97706" }}>
+        <p className="lb-tint text-sm" style={{ "--tint": "#D97706" } as CSSProperties}>
           Nuestro lugar
         </p>
         <h1 className="text-h1 font-display font-bold text-ink">Casa</h1>

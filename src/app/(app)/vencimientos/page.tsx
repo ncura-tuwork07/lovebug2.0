@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionContext } from "@/lib/data";
 import type { Reminder } from "@/lib/types";
@@ -12,7 +13,7 @@ export default async function VencimientosPage() {
   return (
     <div className="flex flex-col gap-6 px-4 pt-6">
       <header>
-        <p className="text-sm" style={{ color: "#F59E0B" }}>
+        <p className="lb-tint text-sm" style={{ "--tint": "#F59E0B" } as CSSProperties}>
           Para que nada se pase
         </p>
         <h1 className="text-h1 font-display font-bold text-ink">Vencimientos</h1>

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { parseISO, startOfWeek, format } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionContext } from "@/lib/data";
@@ -25,7 +26,7 @@ export default async function MenuPage({ searchParams }: { searchParams: Promise
     <div className="flex flex-col gap-6 px-4 pt-6">
       <header className="flex items-end justify-between gap-3">
         <div>
-          <p className="text-sm" style={{ color: "#0EA5A5" }}>
+          <p className="lb-tint text-sm" style={{ "--tint": "#0EA5A5" } as CSSProperties}>
             Qué comemos esta semana
           </p>
           <h1 className="text-h1 font-display font-bold text-ink">Menú semanal</h1>

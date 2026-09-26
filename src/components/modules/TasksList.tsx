@@ -62,7 +62,7 @@ export function TasksList({
         <button
           type="button"
           onClick={sheet.openNew}
-          className="flex h-9 items-center gap-1 rounded-full bg-amber-soft px-3 text-xs font-semibold text-[#8A6A2E]"
+          className="flex h-9 items-center gap-1 rounded-full bg-amber-soft px-3 text-xs font-semibold text-amber"
         >
           <Plus size={14} /> Nueva
         </button>

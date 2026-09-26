@@ -91,9 +91,9 @@ export function ContactsList({ contacts, householdId }: { contacts: Contact[]; h
       {notice && <p className="rounded-md bg-amber-soft px-3 py-2 text-sm text-ink">{notice}</p>}
       <ul className="flex flex-col gap-2">
         {contacts.length === 0 && (
-          <p className="font-accent text-2xl text-ink-faint">
+          <li className="font-accent text-2xl text-ink-faint">
             Todavía no cargaste a nadie. Sumá familiares y amigos: van a aparecer como sugerencia al invitar gente a un evento.
-          </p>
+          </li>
         )}
         {contacts.map((c) => (
           <li key={c.id}>

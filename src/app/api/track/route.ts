@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 // registrar el uso nunca compita con la carga de la pantalla.
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as { path?: unknown; installed?: unknown } | null;
-  if (!body || typeof body.path !== "string") return new NextResponse(null, { status: 400 });
+  // Solo rutas de pantallas: los contadores de la IA ("ia:…") los escribe el servidor.
+  if (!body || typeof body.path !== "string" || !body.path.startsWith("/")) return new NextResponse(null, { status: 400 });
 
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();

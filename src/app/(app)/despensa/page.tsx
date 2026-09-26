@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { PantryItem } from "@/lib/types";
 import { PantryList } from "@/components/modules/PantryList";
@@ -11,7 +12,7 @@ export default async function DespensaPage() {
   return (
     <div className="flex flex-col gap-6 px-4 pt-6">
       <header>
-        <p className="text-sm" style={{ color: "#8B5CF6" }}>
+        <p className="lb-tint text-sm" style={{ "--tint": "#8B5CF6" } as CSSProperties}>
           Lo que ya tenemos en casa
         </p>
         <h1 className="text-h1 font-display font-bold text-ink">Despensa</h1>

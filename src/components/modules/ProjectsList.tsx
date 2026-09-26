@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import type { Horizon, Member, Project } from "@/lib/types";
 import { deleteProject, saveProject, setProjectProgress } from "@/app/actions/projects";
@@ -74,7 +74,7 @@ export function ProjectsList({
         if (items.length === 0) return null;
         return (
           <section key={h} className="lb-card">
-            <h2 className="text-h2 mb-3 font-display uppercase tracking-wide" style={{ color: HORIZONS[h].color }}>
+            <h2 className="lb-tint text-h2 mb-3 font-display uppercase tracking-wide" style={{ "--tint": HORIZONS[h].color } as CSSProperties}>
               {HORIZONS[h].label}
             </h2>
             <ul className="flex flex-col gap-3">

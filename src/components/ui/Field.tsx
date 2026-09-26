@@ -108,6 +108,7 @@ export function RolePicker({
   onChange,
   placeholder = "Elegí…",
   required = false,
+  ariaLabel,
 }: {
   name?: string;
   options: readonly string[];
@@ -115,6 +116,7 @@ export function RolePicker({
   onChange?: (value: string) => void;
   placeholder?: string;
   required?: boolean;
+  ariaLabel?: string; // solo si no está dentro de un <Field> (que ya le da nombre)
 }) {
   const known = options.includes(defaultValue);
   const [choice, setChoice] = useState(defaultValue ? (known ? defaultValue : OTHER) : "");
@@ -126,6 +128,7 @@ export function RolePicker({
       <Select
         value={choice}
         required={required}
+        aria-label={ariaLabel}
         onChange={(e) => {
           setChoice(e.target.value);
           onChange?.(e.target.value === OTHER ? custom.trim() : e.target.value);

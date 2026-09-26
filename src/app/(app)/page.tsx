@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Suspense } from "react";
 import Link from "next/link";
 import { LadybugLoader } from "@/components/ui/LadybugLoader";
@@ -94,7 +95,7 @@ export default async function HoyPage() {
 
       {on("logistica") && (
       <section className="lb-card">
-        <Link href="/logistica" className="mb-3 flex items-center justify-between">
+        <Link href="/logistica" className="-mt-2 mb-1 flex min-h-11 items-center justify-between">
           <h2 className="text-h2 flex items-center gap-2 font-display uppercase tracking-wide text-success">
             <CarFront size={16} /> Logística de hoy
           </h2>
@@ -105,7 +106,7 @@ export default async function HoyPage() {
       )}
 
       <section className="lb-card">
-        <Link href="/calendario" className="mb-3 flex items-center justify-between">
+        <Link href="/calendario" className="-mt-2 mb-1 flex min-h-11 items-center justify-between">
           <h2 className="text-h2 flex items-center gap-2 font-display uppercase tracking-wide text-info">
             <CalendarHeart size={16} /> En el calendario
           </h2>
@@ -116,8 +117,8 @@ export default async function HoyPage() {
 
       {(reminders.length > 0 || dates.length > 0 || famEvents.length > 0) && (
         <section className="lb-card">
-          <Link href="/calendario" className="mb-3 flex items-center justify-between">
-            <h2 className="text-h2 flex items-center gap-2 font-display uppercase tracking-wide" style={{ color: "#F59E0B" }}>
+          <Link href="/calendario" className="-mt-2 mb-1 flex min-h-11 items-center justify-between">
+            <h2 className="lb-tint text-h2 flex items-center gap-2 font-display uppercase tracking-wide" style={{ "--tint": "#F59E0B" } as CSSProperties}>
               <BellRing size={16} /> Se viene
             </h2>
             <ChevronRight size={16} className="text-ink-ghost" />

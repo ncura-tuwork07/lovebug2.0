@@ -1,3 +1,5 @@
+import Link from "next/link";
+import type { CSSProperties } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionContext } from "@/lib/data";
 import { addMonths, monthRange, todayAR } from "@/lib/format";
@@ -40,13 +42,14 @@ export default async function FinanzasPage({ searchParams }: { searchParams: Pro
   return (
     <div className="flex flex-col gap-6 px-4 pt-6">
       <header>
-        <p className="text-sm" style={{ color: "var(--color-ariana)" }}>
+        <p className="lb-tint text-sm" style={{ "--tint": "var(--color-ariana)" } as CSSProperties}>
           Nuestra plata
         </p>
         <h1 className="text-h1 font-display font-bold text-ink">Finanzas</h1>
       </header>
       <MonthNav from={from} today={today} monthLabel={monthLabel} />
       <FinanceView
+        key={from}
         incomes={(incomesRes.data ?? []) as Income[]}
         expenses={(expensesRes.data ?? []) as Expense[]}
         goals={(goalsRes.data ?? []) as SavingsGoal[]}
@@ -72,20 +75,20 @@ function MonthNav({ from, today, monthLabel }: { from: string; today: string; mo
   const isCurrent = from === monthRange(today).from;
   return (
     <div className="flex items-center justify-between gap-2 rounded-full bg-surface px-2 py-1.5 shadow-soft">
-      <a href={`/finanzas?m=${prev}`} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg text-ink-faint hover:bg-line/60" aria-label="Mes anterior">
+      <Link href={`/finanzas?m=${prev}`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg text-ink-faint hover:bg-line/60" aria-label="Mes anterior">
         ‹
-      </a>
+      </Link>
       <span className="flex items-baseline gap-1.5 font-display font-bold capitalize text-ink">
         {monthLabel}
         {!isCurrent && (
-          <a href="/finanzas" className="text-meta font-semibold normal-case text-coral">
+          <Link href="/finanzas" className="text-meta font-semibold normal-case text-coral">
             hoy
-          </a>
+          </Link>
         )}
       </span>
-      <a href={`/finanzas?m=${next}`} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg text-ink-faint hover:bg-line/60" aria-label="Mes siguiente">
+      <Link href={`/finanzas?m=${next}`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg text-ink-faint hover:bg-line/60" aria-label="Mes siguiente">
         ›
-      </a>
+      </Link>
     </div>
   );
 }

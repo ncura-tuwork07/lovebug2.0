@@ -24,7 +24,7 @@ function Switch({ checked, onChange, disabled, label }: { checked: boolean; onCh
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-40 ${checked ? "bg-coral" : "bg-track"}`}
+      className={`relative h-7 w-12 shrink-0 rounded-full transition-colors before:absolute before:-inset-2 before:content-[""] disabled:opacity-40 ${checked ? "bg-coral" : "bg-track"}`}
     >
       <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? "left-1 translate-x-5" : "left-1"}`} />
     </button>

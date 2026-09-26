@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionContext } from "@/lib/data";
@@ -19,7 +20,7 @@ export default async function ComprasPage() {
     <div className="flex flex-col gap-6 px-4 pt-6">
       <header className="flex items-end justify-between gap-3">
         <div>
-          <p className="text-sm" style={{ color: "#FF9F43" }}>
+          <p className="lb-tint text-sm" style={{ "--tint": "#FF9F43" } as CSSProperties}>
             Para el super
           </p>
           <h1 className="text-h1 font-display font-bold text-ink">Compras</h1>

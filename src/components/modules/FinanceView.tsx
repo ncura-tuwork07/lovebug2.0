@@ -262,7 +262,7 @@ export function FinanceView({
       {tab === "gastos" && (
         <ul className="flex flex-col gap-2">
           {visibleExpenses.length === 0 && (
-            <p className="font-accent text-2xl text-ink-faint">Ningún gasto cargado este mes. Tocá + para anotar uno.</p>
+            <li className="font-accent text-2xl text-ink-faint">Ningún gasto cargado este mes. Tocá + para anotar uno.</li>
           )}
           {visibleExpenses.map((ex) => (
             <li key={ex.id}>
@@ -295,7 +295,7 @@ export function FinanceView({
       {tab === "ingresos" && (
         <ul className="flex flex-col gap-2">
           {visibleIncomes.length === 0 && (
-            <p className="font-accent text-2xl text-ink-faint">Sin ingresos cargados este mes. Tocá + para sumar uno.</p>
+            <li className="font-accent text-2xl text-ink-faint">Sin ingresos cargados este mes. Tocá + para sumar uno.</li>
           )}
           {visibleIncomes.map((inc) => (
             <li key={inc.id}>
@@ -328,7 +328,7 @@ export function FinanceView({
       {tab === "ahorro" && (
         <ul className="flex flex-col gap-3">
           {goals.length === 0 && (
-            <p className="font-accent text-2xl text-ink-faint">Todavía no hay objetivos de ahorro. ¿Un auto? ¿La casa?</p>
+            <li className="font-accent text-2xl text-ink-faint">Todavía no hay objetivos de ahorro. ¿Un auto? ¿La casa?</li>
           )}
           {goals.map((g) => {
             const pct = Math.min(100, Math.round((Number(g.current_amount) / Number(g.target_amount)) * 100));

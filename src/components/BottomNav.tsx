@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarHeart, CarFront, LayoutGrid, PiggyBank, Sparkles } from "lucide-react";
@@ -31,9 +32,9 @@ export function BottomNav() {
             <li key={href} className="flex-1">
               <Link
                 href={href}
-                style={{ color: active ? color : undefined }}
+                style={active ? ({ "--tint": color } as CSSProperties) : undefined}
                 className={`flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl py-1.5 text-xs transition-colors ${
-                  active ? "" : "text-ink-ghost"
+                  active ? "lb-tint" : "text-ink-ghost"
                 }`}
               >
                 <Icon size={20} strokeWidth={active ? 2.5 : 2} />

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { getContacts, getSessionContext } from "@/lib/data";
 import { ContactsList } from "@/components/modules/ContactsList";
 
@@ -9,7 +10,7 @@ export default async function CirculoPage() {
   return (
     <div className="flex flex-col gap-6 px-4 pt-6">
       <header>
-        <p className="text-sm" style={{ color: "#0891B2" }}>
+        <p className="lb-tint text-sm" style={{ "--tint": "#0891B2" } as CSSProperties}>
           Familia y amigos, fuera de casa
         </p>
         <h1 className="text-h1 font-display font-bold text-ink">Círculo</h1>

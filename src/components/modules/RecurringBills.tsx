@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarClock, Check, Pause, Receipt } from "lucide-react";
 import type { BillCycle, Member, Reminder } from "@/lib/types";
@@ -66,7 +66,7 @@ export function RecurringBills({
   return (
     <section className="lb-card">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <h2 className="text-h2 flex items-center gap-2 font-display uppercase tracking-wide" style={{ color: "var(--color-ariana)" }}>
+        <h2 className="lb-tint text-h2 flex items-center gap-2 font-display uppercase tracking-wide" style={{ "--tint": "var(--color-ariana)" } as CSSProperties}>
           <CalendarClock size={16} /> Cuentas de {monthLabel}
         </h2>
         {totalPending > 0 && <span className="text-meta font-semibold text-ink-faint">Faltan {formatARS(totalPending)}</span>}
