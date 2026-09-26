@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { createHousehold, joinHousehold } from "@/app/actions/household";
 import { confirmDeviceUnlock } from "@/app/actions/appLock";
@@ -22,7 +21,6 @@ export function Onboarding({
   defaultCode: string;
   email: string;
 }) {
-  const router = useRouter();
   const [mode, setMode] = useState<Mode>(defaultCode ? "join" : "create");
   const [name, setName] = useState(defaultName);
   const [role, setRole] = useState(defaultRole);
@@ -39,8 +37,7 @@ export function Onboarding({
       if (mode === "create") await createHousehold({ name: householdName, memberName: name, role });
       else await joinHousehold({ code, memberName: name, role });
       await confirmDeviceUnlock();
-      router.push("/");
-      router.refresh();
+      window.location.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No pudimos guardarlo. Probá de nuevo.");
       setLoading(false);

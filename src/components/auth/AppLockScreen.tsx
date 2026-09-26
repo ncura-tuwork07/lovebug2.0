@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Fingerprint, Lock } from "lucide-react";
 import { startAuthentication } from "@simplewebauthn/browser";
 import { createClient } from "@/lib/supabase/client";
 import { getUnlockOptions, verifyAppUnlock } from "@/app/actions/appLock";
-import { deviceHasPasskey, devicePasskeyId, forgetDevicePasskey } from "@/lib/passkeyClient";
+import { deviceHasPasskey, rememberDevicePasskey } from "@/lib/passkeyClient";
 import { AuthShell } from "@/components/auth/AuthShell";
 
+// Si algo se traba (red lenta, el celu no devuelve la huella), el botón se libera solo.
+const WATCHDOG_MS = 20_000;
+
 export function AppLockScreen({ next }: { next: string }) {
-  const router = useRouter();
   // null mientras se chequea localStorage, para no mostrar el botón que no corresponde ni un instante.
   const [hasPasskey, setHasPasskey] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
@@ -18,38 +19,35 @@ export function AppLockScreen({ next }: { next: string }) {
 
   useEffect(() => setHasPasskey(deviceHasPasskey()), []);
 
+  useEffect(() => {
+    if (!busy) return;
+    const t = setTimeout(() => {
+      setBusy(false);
+      setError("Tardó demasiado. Probá de nuevo o entrá con tu contraseña.");
+    }, WATCHDOG_MS);
+    return () => clearTimeout(t);
+  }, [busy]);
+
   async function unlock() {
-    const credentialId = devicePasskeyId();
-    if (!credentialId) return;
     setBusy(true);
     setError(null);
     try {
-      const { options, challengeId } = await getUnlockOptions(credentialId);
+      const { options, challengeId } = await getUnlockOptions();
       const response = await startAuthentication({ optionsJSON: options });
       await verifyAppUnlock({ challengeId, response });
-      router.push(next);
-      router.refresh();
+      rememberDevicePasskey(response.id);
+      // Navegación completa (no la del router): arranca de cero con la cookie recién puesta.
+      window.location.replace(next);
     } catch (e) {
-      if (e instanceof Error && e.name === "NotAllowedError") {
-        setBusy(false);
-        return;
-      }
-      const message = e instanceof Error ? e.message : "";
-      // La llave se borró desde Ajustes (o desde otro dispositivo): pasamos al modo sin huella.
-      if (/ya no está activa/.test(message)) {
-        forgetDevicePasskey();
-        setHasPasskey(false);
-        setBusy(false);
-        return;
-      }
-      setError(message || "No pudimos confirmar la huella. Probá de nuevo.");
       setBusy(false);
+      if (e instanceof Error && e.name === "NotAllowedError") return; // canceló la huella
+      setError(e instanceof Error && e.message ? e.message : "No pudimos confirmar la huella. Probá de nuevo.");
     }
   }
 
-  async function useSignOut() {
+  async function goToPassword() {
     await createClient().auth.signOut();
-    window.location.href = next !== "/" ? `/login?next=${encodeURIComponent(next)}` : "/login";
+    window.location.replace(next !== "/" ? `/login?next=${encodeURIComponent(next)}` : "/login");
   }
 
   if (hasPasskey === null) return null;
@@ -65,11 +63,17 @@ export function AppLockScreen({ next }: { next: string }) {
         </span>
         {error && <p className="text-center text-sm text-coral">{error}</p>}
         {hasPasskey ? (
-          <button type="button" disabled={busy} onClick={unlock} className="lb-btn flex w-full items-center justify-center gap-2 disabled:opacity-60">
-            <Fingerprint size={18} /> {busy ? "Esperando tu huella…" : "Mostrar mi huella"}
-          </button>
+          <>
+            <button type="button" disabled={busy} onClick={unlock} className="lb-btn flex w-full items-center justify-center gap-2 disabled:opacity-60">
+              <Fingerprint size={18} /> {busy ? "Esperando tu huella…" : "Mostrar mi huella"}
+            </button>
+            {/* Siempre hay una salida: si la huella falla o se traba, se entra con la contraseña. */}
+            <button type="button" onClick={goToPassword} className="min-h-11 text-sm font-semibold text-white/70 underline-offset-4 hover:underline">
+              Entrar con mi contraseña
+            </button>
+          </>
         ) : (
-          <button type="button" onClick={useSignOut} className="lb-btn w-full">
+          <button type="button" onClick={goToPassword} className="lb-btn w-full">
             Entrar con tu contraseña
           </button>
         )}

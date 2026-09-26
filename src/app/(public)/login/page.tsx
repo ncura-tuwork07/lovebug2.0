@@ -1,14 +1,13 @@
 "use client";
 
 import { Suspense, useState, type FormEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AuthInput, AuthLink, AuthShell } from "@/components/auth/AuthShell";
 import { PasskeyLoginButton } from "@/components/auth/PasskeyLoginButton";
 import { confirmDeviceUnlock } from "@/app/actions/appLock";
 
 function LoginForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/";
   const [email, setEmail] = useState("");
@@ -36,9 +35,11 @@ function LoginForm() {
       sessionStorage.setItem("lb-offer-passkey", "1");
     } catch {}
     // La contraseña ya prueba quién sos: no hace falta pedir la huella de nuevo al entrar.
-    await confirmDeviceUnlock();
-    router.push(next.startsWith("/") ? next : "/");
-    router.refresh();
+    try {
+      await confirmDeviceUnlock();
+    } catch {}
+    // Navegación completa: arranca de cero con las cookies recién puestas (sesión + desbloqueo).
+    window.location.replace(next.startsWith("/") ? next : "/");
   }
 
   return (

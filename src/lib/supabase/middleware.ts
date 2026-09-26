@@ -61,7 +61,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (startsWithAny(pathname, GUEST_ONLY)) {
+  // Solo al ver la página: las server actions de /login y /registro (POST) corren justo después de
+  // iniciar sesión, y si las redirigimos acá nunca se ejecutan (por ejemplo, marcar el celu como
+  // desbloqueado después de entrar con la contraseña).
+  if (request.method === "GET" && startsWithAny(pathname, GUEST_ONLY)) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     url.search = "";

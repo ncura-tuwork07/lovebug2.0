@@ -9,22 +9,20 @@ import { consumeChallenge, requireAdmin, saveChallenge } from "@/lib/passkeyChal
 
 // El bloqueo por huella (pantalla /bloqueo): ya hay una sesión de Supabase abierta, así que no
 // hace falta el puente por magic link del login — solo confirmar que quien tiene el celu en mano
-// puede mostrar la huella que este dispositivo ya tiene guardada.
+// puede mostrar una huella de esta cuenta.
 
-export async function getUnlockOptions(credentialId: string) {
+// Mismas opciones que el login con huella (que ya anda en los celus de la familia): sin
+// allowCredentials, el celu ofrece la llave que tenga. Después verificamos que sea de esta cuenta.
+export async function getUnlockOptions() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Tenés que iniciar sesión primero.");
 
-  const { data: passkey } = await supabase.from("user_passkeys").select("id, transports").eq("id", credentialId).eq("user_id", user.id).maybeSingle();
-  if (!passkey) throw new Error("Esa llave ya no está activa en esta cuenta.");
-
   const options = await generateAuthenticationOptions({
     rpID: await getRpID(),
     userVerification: "required",
-    allowCredentials: [{ id: passkey.id as string, transports: (passkey.transports ?? undefined) as ("ble" | "hybrid" | "internal" | "nfc" | "usb")[] | undefined }],
   });
   const admin = requireAdmin();
   const challengeId = await saveChallenge(admin, options.challenge, user.id);
@@ -44,7 +42,7 @@ export async function verifyAppUnlock(input: { challengeId: string; response: Au
 
   const credentialId = input.response.id;
   const { data: saved } = await supabase.from("user_passkeys").select("id, public_key, counter, transports").eq("id", credentialId).eq("user_id", user.id).maybeSingle();
-  if (!saved) throw new Error("Esa llave ya no está activa en esta cuenta.");
+  if (!saved) throw new Error("Esa huella no está activa en esta cuenta. Entrá con tu contraseña.");
 
   const verification = await verifyAuthenticationResponse({
     response: input.response,

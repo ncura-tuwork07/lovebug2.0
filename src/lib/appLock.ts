@@ -7,7 +7,8 @@ import { cookies } from "next/headers";
 // mostrar la huella antes de ver nada del hogar. No guarda nada en la base: se verifica sola (HMAC)
 // para no sumar una ida y vuelta más en cada pedido.
 export const APP_LOCK_COOKIE = "lb_unlock";
-export const APP_LOCK_TTL_SECONDS = 60;
+// 5 minutos sin ningún pedido. Con menos, bloqueaba mientras alguien leía una pantalla sin tocar nada.
+export const APP_LOCK_TTL_SECONDS = 300;
 
 const encoder = new TextEncoder();
 
