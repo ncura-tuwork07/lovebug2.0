@@ -12,6 +12,7 @@ import { MemberChip, memberById } from "@/components/ui/MemberChip";
 import { fd, useSheet } from "@/components/ui/useSheet";
 import { daysUntilLabel, type Upcoming } from "@/lib/dates";
 import { formatDay, todayAR } from "@/lib/format";
+import { EmptyAction } from "@/components/ui/EmptyAction";
 
 export const KIND_ICON = { cumple: Cake, aniversario: Heart, otro: Star };
 
@@ -45,7 +46,10 @@ export function ImportantDates({ upcoming, dates, members }: { upcoming: Upcomin
   return (
     <>
       {upcoming.length === 0 && (
-        <p className="font-accent text-2xl text-ink-faint">Cargá cumpleaños, el aniversario, y avisamos con tiempo para el regalo.</p>
+        <div className="flex flex-col gap-2">
+          <p className="font-accent text-2xl text-ink-faint">Cargá cumpleaños, el aniversario, y avisamos con tiempo para el regalo.</p>
+          <EmptyAction label="Cargar una fecha" onClick={sheet.openNew} />
+        </div>
       )}
       <ul className="flex flex-col gap-2">
         {upcoming.map((u) => {

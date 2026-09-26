@@ -24,6 +24,7 @@ import { fd, useSheet } from "@/components/ui/useSheet";
 import { formatARS, relativeDayLabel, todayAR } from "@/lib/format";
 
 import { EXPENSE_CATEGORIES, INCOME_SOURCES } from "@/lib/labels";
+import { EmptyAction } from "@/components/ui/EmptyAction";
 
 type Tab = "gastos" | "ingresos" | "ahorro" | "topes";
 
@@ -262,7 +263,10 @@ export function FinanceView({
       {tab === "gastos" && (
         <ul className="flex flex-col gap-2">
           {visibleExpenses.length === 0 && (
-            <li className="font-accent text-2xl text-ink-faint">Ningún gasto cargado este mes. Tocá + para anotar uno.</li>
+            <li className="flex flex-col gap-2">
+              <p className="font-accent text-2xl text-ink-faint">Ningún gasto cargado este mes.</p>
+              <EmptyAction label="Anotar un gasto" onClick={expenseSheet.openNew} />
+            </li>
           )}
           {visibleExpenses.map((ex) => (
             <li key={ex.id}>
@@ -295,7 +299,10 @@ export function FinanceView({
       {tab === "ingresos" && (
         <ul className="flex flex-col gap-2">
           {visibleIncomes.length === 0 && (
-            <li className="font-accent text-2xl text-ink-faint">Sin ingresos cargados este mes. Tocá + para sumar uno.</li>
+            <li className="flex flex-col gap-2">
+              <p className="font-accent text-2xl text-ink-faint">Sin ingresos cargados este mes.</p>
+              <EmptyAction label="Sumar un ingreso" onClick={incomeSheet.openNew} />
+            </li>
           )}
           {visibleIncomes.map((inc) => (
             <li key={inc.id}>
@@ -328,7 +335,10 @@ export function FinanceView({
       {tab === "ahorro" && (
         <ul className="flex flex-col gap-3">
           {goals.length === 0 && (
-            <li className="font-accent text-2xl text-ink-faint">Todavía no hay objetivos de ahorro. ¿Un auto? ¿La casa?</li>
+            <li className="flex flex-col gap-2">
+              <p className="font-accent text-2xl text-ink-faint">Todavía no hay objetivos de ahorro. ¿Un auto? ¿Las vacaciones?</p>
+              <EmptyAction label="Crear un objetivo" onClick={goalSheet.openNew} />
+            </li>
           )}
           {goals.map((g) => {
             const pct = Math.min(100, Math.round((Number(g.current_amount) / Number(g.target_amount)) * 100));

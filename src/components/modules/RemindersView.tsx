@@ -11,6 +11,7 @@ import { Field, Input, MemberSelect, Select, SubmitRow, Textarea } from "@/compo
 import { MemberChip, memberById } from "@/components/ui/MemberChip";
 import { fd, useSheet } from "@/components/ui/useSheet";
 import { formatARS, formatDay, todayAR } from "@/lib/format";
+import { EmptyAction } from "@/components/ui/EmptyAction";
 
 export const REMINDER_CATEGORIES: Record<ReminderCategory, string> = {
   seguro: "Seguro",
@@ -63,7 +64,10 @@ export function RemindersView({
   return (
     <div className="flex flex-col gap-5">
       {open.length === 0 && (
-        <p className="font-accent text-2xl text-ink-faint">Nada por vencer. Tocá + para cargar el seguro, la luz, la VTV…</p>
+        <div className="flex flex-col gap-2">
+          <p className="font-accent text-2xl text-ink-faint">Nada por vencer. Cargá el seguro, la luz, la VTV… y te avisamos antes.</p>
+          <EmptyAction label="Cargar un vencimiento" onClick={remSheet.openNew} />
+        </div>
       )}
       <ul className="flex flex-col gap-2">
         {(showDone ? [...open, ...done] : open).map((r) => {

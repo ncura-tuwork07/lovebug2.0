@@ -10,6 +10,7 @@ import { Field, Input, MemberSelect, Select, SubmitRow, Textarea } from "@/compo
 import { MemberChip, memberById } from "@/components/ui/MemberChip";
 import { fd, useSheet } from "@/components/ui/useSheet";
 import { formatDay } from "@/lib/format";
+import { EmptyAction } from "@/components/ui/EmptyAction";
 
 export const HORIZONS: Record<Horizon, { label: string; color: string }> = {
   today: { label: "Hoy", color: "var(--color-amber)" },
@@ -113,9 +114,10 @@ export function ProjectsList({
       })}
 
       {visible.length === 0 && (
-        <p className="font-accent text-2xl text-ink-faint">
-          {projects.length === 0 ? "Sin metas todavía. Tocá + y anotá la primera." : "¡Todo tachado! Una menos de la lista."}
-        </p>
+        <div className="flex flex-col gap-2">
+          <p className="font-accent text-2xl text-ink-faint">{projects.length === 0 ? "Sin metas todavía." : "¡Todo tachado! Una menos de la lista."}</p>
+          {projects.length === 0 && <EmptyAction label="Anotar la primera meta" onClick={openNew} />}
+        </div>
       )}
 
       {doneCount > 0 && (

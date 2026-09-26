@@ -11,6 +11,7 @@ import { Field, Input, Select, SubmitRow, Textarea } from "@/components/ui/Field
 import { fd, useSheet } from "@/components/ui/useSheet";
 import { UNITS, formatQty } from "@/lib/kitchen";
 import { SHOPPING_CATEGORIES } from "@/lib/labels";
+import { EmptyAction } from "@/components/ui/EmptyAction";
 
 export function PantryList({ items }: { items: PantryItem[] }) {
   const router = useRouter();
@@ -53,9 +54,10 @@ export function PantryList({ items }: { items: PantryItem[] }) {
       <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar en la despensa…" aria-label="Buscar" />
 
       {items.length === 0 && (
-        <p className="font-accent text-2xl text-ink-faint">
-          Vacía. Cargá lo que tienen en casa, o desde Compras tocá “Guardar en despensa” cuando vacíen el changuito.
-        </p>
+        <div className="flex flex-col gap-2">
+          <p className="font-accent text-2xl text-ink-faint">Vacía. Cargá lo que tienen en casa, o desde Compras tocá “Guardar en despensa” cuando vacíen el changuito.</p>
+          <EmptyAction label="Cargar lo que hay" onClick={sheet.openNew} />
+        </div>
       )}
 
       {grouped.map(({ c, list }) => (

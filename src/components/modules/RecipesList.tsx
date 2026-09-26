@@ -9,6 +9,7 @@ import { Fab } from "@/components/ui/Fab";
 import { Field, Input, Select, SubmitRow, Textarea } from "@/components/ui/Field";
 import { fd, useSheet } from "@/components/ui/useSheet";
 import { UNITS, formatQty } from "@/lib/kitchen";
+import { EmptyAction } from "@/components/ui/EmptyAction";
 
 const EMPTY: Ingredient = { name: "", quantity: null, unit: "u" };
 
@@ -54,9 +55,10 @@ export function RecipesList({ recipes }: { recipes: Recipe[] }) {
       <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar receta…" aria-label="Buscar" />
 
       {recipes.length === 0 && (
-        <p className="font-accent text-2xl text-ink-faint">
-          Cargá las recetas de siempre con sus ingredientes. Después, planificar y comprar es un toque.
-        </p>
+        <div className="flex flex-col gap-2">
+          <p className="font-accent text-2xl text-ink-faint">Cargá las recetas de siempre con sus ingredientes. Después, planificar y comprar es un toque.</p>
+          <EmptyAction label="Cargar una receta" onClick={openNew} />
+        </div>
       )}
 
       <ul className="flex flex-col gap-2">

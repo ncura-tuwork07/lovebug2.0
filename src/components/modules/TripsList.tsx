@@ -11,6 +11,7 @@ import { Field, Input, MemberSelect, Select, SubmitRow, Textarea } from "@/compo
 import { MemberChip, memberById } from "@/components/ui/MemberChip";
 import { fd, useSheet } from "@/components/ui/useSheet";
 import { relativeDayLabel, shortTime, todayAR } from "@/lib/format";
+import { EmptyAction } from "@/components/ui/EmptyAction";
 
 export const TRANSPORT: Record<Transport, { label: string; icon: typeof CarFront }> = {
   auto: { label: "Auto", icon: CarFront },
@@ -122,9 +123,10 @@ export function TripsList({
   return (
     <>
       {trips.length === 0 && (
-        <p className="font-accent text-2xl text-ink-faint">
-          {compact ? "Nadie tiene que ir a ningún lado hoy." : "Sin traslados cargados. Tocá + para agregar uno."}
-        </p>
+        <div className="flex flex-col gap-2">
+          <p className="font-accent text-2xl text-ink-faint">{compact ? "Nadie tiene que ir a ningún lado hoy." : "Sin traslados cargados."}</p>
+          {!compact && <EmptyAction label="Cargar un traslado" onClick={sheet.openNew} />}
+        </div>
       )}
 
       {compact ? (

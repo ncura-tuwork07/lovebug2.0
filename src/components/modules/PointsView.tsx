@@ -11,6 +11,7 @@ import { Field, Input, SubmitRow } from "@/components/ui/Field";
 import { MemberAvatar } from "@/components/ui/MemberChip";
 import { fd, useSheet } from "@/components/ui/useSheet";
 import { formatDay } from "@/lib/format";
+import { EmptyAction } from "@/components/ui/EmptyAction";
 
 export function PointsView({
   members,
@@ -93,7 +94,10 @@ export function PointsView({
           <Gift size={16} /> Premios
         </h2>
         {rewards.length === 0 && (
-          <p className="text-body text-ink-faint">Tocá + para cargar premios: “elegir la peli”, “helado”, “media hora más de pantalla”…</p>
+          <div className="flex flex-col gap-2">
+            <p className="text-body text-ink-faint">Premios que se canjean con puntos: “elegir la peli”, “helado”, “media hora más de pantalla”…</p>
+            <EmptyAction label="Crear un premio" onClick={rewardSheet.openNew} />
+          </div>
         )}
         <ul className="flex flex-col gap-3">
           {rewards.map((r) => (

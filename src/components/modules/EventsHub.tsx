@@ -12,6 +12,7 @@ import { Field, Input, SubmitRow, Textarea } from "@/components/ui/Field";
 import { fd, useSheet } from "@/components/ui/useSheet";
 import { formatARS, formatDay, shortTime, todayAR } from "@/lib/format";
 import { daysUntilLabel } from "@/lib/dates";
+import { EmptyAction } from "@/components/ui/EmptyAction";
 
 export function EventsHub({ events }: { events: FamilyEvent[] }) {
   const router = useRouter();
@@ -81,9 +82,10 @@ export function EventsHub({ events }: { events: FamilyEvent[] }) {
   return (
     <div className="flex flex-col gap-5">
       {events.length === 0 && (
-        <p className="font-accent text-2xl text-ink-faint">
-          Un cumple, un asado, la comunión… Tocá + y armamos el menú, las compras y las tareas.
-        </p>
+        <div className="flex flex-col gap-2">
+          <p className="font-accent text-2xl text-ink-faint">Un cumple, un asado, la comunión… y armamos el menú, las compras y las tareas.</p>
+          <EmptyAction label="Armar un evento" onClick={sheet.openNew} />
+        </div>
       )}
       {upcoming.length > 0 && <ul className="flex flex-col gap-2">{upcoming.map(card)}</ul>}
       {past.length > 0 && (
