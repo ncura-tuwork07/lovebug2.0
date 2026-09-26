@@ -1,10 +1,13 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Activity, ChevronLeft, Download, Home, ShieldCheck, Smartphone, Users } from "lucide-react";
+import { Activity, ChevronLeft, Download, Gauge, Home, ShieldCheck, Smartphone, Users } from "lucide-react";
 import { getSessionContext } from "@/lib/data";
 import { isAppAdmin } from "@/lib/admin";
 import { getAdminMetrics } from "@/lib/metrics";
 import { formatDay } from "@/lib/format";
+import { awsCity, measureSpeed, regionCity } from "@/lib/speed";
+import { LadybugLoader } from "@/components/ui/LadybugLoader";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +61,10 @@ export default async function AdminPage() {
         <Stat icon={Smartphone} label="Dispositivos con avisos" value={m.pushDevices} color="#F59E0B" />
       </section>
 
+      <Suspense fallback={<section className="lb-card"><LadybugLoader label="Midiendo la velocidad…" /></section>}>
+        <SpeedCard />
+      </Suspense>
+
       <section className="lb-card">
         <h2 className="text-h2 mb-3 font-display uppercase tracking-wide text-info">Módulos más usados · 30 días</h2>
         <ul className="flex flex-col gap-2.5">
@@ -95,5 +102,44 @@ export default async function AdminPage() {
         </ul>
       </section>
     </div>
+  );
+}
+
+// ¿Vercel y Supabase están en la misma región? Es lo que más pesa en la velocidad de cada pantalla.
+async function SpeedCard() {
+  const r = await measureSpeed();
+  const rtt = r.roundTripMs;
+  const tone = rtt === null ? "text-ink-faint" : rtt < 20 ? "text-success" : rtt < 60 ? "text-amber" : "text-danger";
+  return (
+    <section className="lb-card flex flex-col gap-3">
+      <h2 className="text-h2 flex items-center gap-2 font-display uppercase tracking-wide text-info">
+        <Gauge size={16} /> Velocidad
+      </h2>
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm">
+        <dt className="text-ink-faint">Servidores (Vercel)</dt>
+        <dd className="font-semibold text-ink">{r.vercelRegion ? `${regionCity(r.vercelRegion)} · ${r.vercelRegion}` : "no informado"}</dd>
+        <dt className="text-ink-faint">Base de datos (Supabase)</dt>
+        <dd className="font-semibold text-ink">{r.supabaseRegion ? `${awsCity(r.supabaseRegion)} · ${r.supabaseRegion}` : "no la pudimos deducir"}</dd>
+        <dt className="text-ink-faint">Ida y vuelta</dt>
+        <dd className={`font-semibold ${tone}`}>{rtt === null ? "sin medir" : `${rtt} ms por consulta`}</dd>
+      </dl>
+      {r.sameRegion ? (
+        <p className="rounded-md bg-success/10 px-3 py-2 text-sm text-ink">✓ Están en la misma región: por este lado la app ya va lo más rápido posible.</p>
+      ) : (
+        <div className="flex flex-col gap-2 rounded-md bg-amber-soft px-3 py-2 text-sm text-ink">
+          <p>
+            ⚠️ Están lejos: cada pantalla hace varias consultas y cada una tarda {rtt ?? "?"} ms en ir y volver.
+            {r.recommended ? ` Poné los servidores en ${regionCity(r.recommended)} (${r.recommended}).` : " Poné los servidores en la misma región que la base."}
+          </p>
+          <ol className="flex list-decimal flex-col gap-0.5 pl-5">
+            {!r.recommended && <li>En Supabase: Project Settings → General → fijate la “Region”.</li>}
+            <li>En Vercel: proyecto lovebug → Settings → Functions → Function Region.</li>
+            <li>Elegí {r.recommended ? `“${regionCity(r.recommended)}” (${r.recommended})` : "la misma región (São Paulo = gru1, Washington = iad1)"} y guardá.</li>
+            <li>Deployments → el último → Redeploy. Volvé acá para ver la diferencia.</li>
+          </ol>
+        </div>
+      )}
+      {r.hints.length > 0 && <p className="break-all text-[11px] text-ink-faint">{r.hints.join(" · ")}</p>}
+    </section>
   );
 }
