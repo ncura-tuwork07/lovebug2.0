@@ -181,3 +181,15 @@
 
 /* Barrita que se va vaciando en el aviso de "Deshacer". */
 @keyframes lb-undo { from { width: 100%; } to { width: 0%; } }
+
+/* Mapa del Merodeador (Casa): la tinta aparece, las paredes se dibujan solas y cada uno "cambia de
+   pie" mientras está quieto. Colores fijos: es un pergamino, igual en claro y en oscuro. */
+@keyframes lb-ink-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes lb-ink-in { from { opacity: 0; filter: blur(2px); } to { opacity: 1; filter: none; } }
+@keyframes lb-weight { 0%, 100% { opacity: .95; } 50% { opacity: .35; } }
+.lb-mm-wall { stroke-dasharray: 1; animation: lb-ink-draw 1.5s ease-out both; }
+.lb-mm-in { animation: lb-ink-in .9s ease-out both; }
+.lb-mm-foot { animation: lb-weight 2.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .lb-mm-wall, .lb-mm-in, .lb-mm-foot { animation: none; stroke-dasharray: none; }
+}

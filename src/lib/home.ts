@@ -116,3 +116,52 @@ export const usedCols = (rooms: Pick<Room, "x" | "w">[]) => Math.max(6, ...rooms
 
 // Cuánto hace que marcó dónde estaba: pasadas unas horas lo mostramos apagado.
 export const PRESENCE_FRESH_MS = 4 * 3600_000;
+
+// ── "¿Dónde estás?" y "Vení para acá" (migración 015) ─────────────────────────────────────────
+export type PingKind = "donde" | "veni";
+export type PingReply = "aca" | "afuera" | "voy" | "ratito" | "no";
+export type HomePing = {
+  id: string;
+  from_member: string;
+  to_member: string;
+  kind: PingKind;
+  room_id: string | null;
+  reply: PingReply | null;
+  reply_room_id: string | null;
+  answered_at: string | null;
+  created_at: string;
+};
+export const PING_REPLIES: Record<PingKind, PingReply[]> = { donde: ["aca", "afuera"], veni: ["voy", "ratito", "no"] };
+export const PING_PENDING_MS = 2 * 3600_000; // pasado esto, una pregunta sin contestar ya no aparece
+
+// Cada cambio de ambiente, para las pisadas del Mapa del Merodeador (null = afuera de la casa).
+export type HomeMove = { member_id: string; from_room: string | null; to_room: string | null; moved_at: string };
+export const MOVES_KEEP_MS = 2 * 86_400_000;
+
+const roomLabel = (room: Pick<Room, "name" | "kind"> | null | undefined) => (room ? `${ROOM_STYLE[room.kind].emoji} ${room.name}` : null);
+
+// Lo que contestó, contado para quien preguntó (el aviso y el cartelito de la app).
+export function pingAnswerText(ping: Pick<HomePing, "kind" | "reply" | "room_id" | "reply_room_id">, name: string, rooms: Pick<Room, "id" | "name" | "kind">[]): string {
+  const room = (id: string | null) => roomLabel(rooms.find((r) => r.id === id));
+  switch (ping.reply) {
+    case "aca":
+      return `${name} está en ${room(ping.reply_room_id) ?? "casa"}`;
+    case "afuera":
+      return `${name} no está en casa`;
+    case "voy":
+      return `${name}: ¡Voy! 🏃${room(ping.room_id) ? ` (a ${room(ping.room_id)})` : ""}`;
+    case "ratito":
+      return `${name}: En un ratito ⏳`;
+    case "no":
+      return `${name}: Ahora no puedo 🙅`;
+    default:
+      return ping.kind === "donde" ? `Esperando que ${name} conteste…` : `Esperando que ${name} venga…`;
+  }
+}
+
+// Lo que le llega a quien le preguntan.
+export function pingAskText(ping: Pick<HomePing, "kind" | "room_id">, from: string, rooms: Pick<Room, "id" | "name" | "kind">[]): { title: string; body: string } {
+  if (ping.kind === "donde") return { title: `📍 ${from} pregunta dónde estás`, body: "Tocá para contarle en qué parte de la casa estás." };
+  const room = roomLabel(rooms.find((r) => r.id === ping.room_id));
+  return { title: `🙋 ${from} te llama`, body: room ? `Vení a ${room}.` : "Vení un toque." };
+}

@@ -5,7 +5,17 @@ import { Check, Copy, ExternalLink, RotateCw } from "lucide-react";
 
 // Hasta que se crean las tablas del plano: tres toques desde el celu (copiar, abrir Supabase, pegar
 // y Run) y recargar. Solo lo ven los admins; el resto ve "casi listo".
-export function HomeSetup({ sql, editorUrl }: { sql: string; editorUrl: string | null }) {
+export function HomeSetup({
+  sql,
+  editorUrl,
+  title = "El plano de la casa está casi listo 🏡",
+  intro = "Falta crear sus tablas en Supabase. Es una sola vez y tarda un minuto:",
+}: {
+  sql: string;
+  editorUrl: string | null;
+  title?: string;
+  intro?: string;
+}) {
   const [copied, setCopied] = useState(false);
   const [showSql, setShowSql] = useState(false);
 
@@ -20,8 +30,8 @@ export function HomeSetup({ sql, editorUrl }: { sql: string; editorUrl: string |
 
   return (
     <section className="lb-card flex flex-col gap-3">
-      <p className="text-item font-medium text-ink">El plano de la casa está casi listo 🏡</p>
-      <p className="text-meta text-ink-faint">Falta crear sus tablas en Supabase. Es una sola vez y tarda un minuto:</p>
+      <p className="text-item font-medium text-ink">{title}</p>
+      <p className="text-meta text-ink-faint">{intro}</p>
       <ol className="flex list-decimal flex-col gap-1 pl-5 text-sm text-ink-soft">
         <li>Tocá “Copiar el SQL”.</li>
         <li>Tocá “Abrir Supabase”: se abre el SQL Editor de tu proyecto.</li>

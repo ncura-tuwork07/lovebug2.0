@@ -2,9 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Box, ImagePlus, LogOut, Map as MapIcon, Mic, Pencil, Sparkles, Square, X } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Box, Footprints, ImagePlus, LogOut, Map as MapIcon, Mic, Pencil, Sparkles, Square, X } from "lucide-react";
 import type { Member } from "@/lib/types";
-import { deleteRoom, replaceRooms, saveRoom, setPresence } from "@/app/actions/home";
+import { deleteRoom, replaceRooms, saveRoom, sendHomePing, setPresence } from "@/app/actions/home";
+import { MaraudersMap } from "@/components/modules/MaraudersMap";
+import { RoomGrid } from "@/components/modules/RoomGrid";
+import { useRealtimeRefresh } from "@/components/useRealtime";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Fab } from "@/components/ui/Fab";
 import { Field, Input, Select, SubmitRow, Textarea } from "@/components/ui/Field";
@@ -20,15 +23,24 @@ import {
   PRESENCE_FRESH_MS,
   ROOM_KINDS,
   ROOM_STYLE,
+  pingAnswerText,
   usedCols,
   usedRows,
+  type HomeMove,
+  type HomePing,
+  type PingKind,
   type Presence,
   type Room,
   type RoomDraft,
   type RoomKind,
 } from "@/lib/home";
 
-type View = "3d" | "plano";
+type View = "3d" | "plano" | "magia";
+const VIEWS: { key: View; label: string; icon: typeof Box }[] = [
+  { key: "3d", label: "3D", icon: Box },
+  { key: "plano", label: "Plano", icon: MapIcon },
+  { key: "magia", label: "Merodeador", icon: Footprints },
+];
 type Placed = Omit<Room, "id"> & { id: string };
 
 const VIEW_KEY = "lb-casa-view";
@@ -45,7 +57,23 @@ function ago(iso: string): string {
   return `hace ${Math.round(h / 24)} d`;
 }
 
-export function HomePlan({ rooms, presence, members, myId }: { rooms: Room[]; presence: Presence[]; members: Member[]; myId: string | null }) {
+export function HomePlan({
+  rooms,
+  presence,
+  members,
+  myId,
+  householdName = null,
+  pings = null,
+  moves = [],
+}: {
+  rooms: Room[];
+  presence: Presence[];
+  members: Member[];
+  myId: string | null;
+  householdName?: string | null;
+  pings?: HomePing[] | null; // null = todavía no se corrió la migración 015
+  moves?: HomeMove[];
+}) {
   const router = useRouter();
   const [view, setView] = useState<View>("3d");
   const floors = useMemo(() => [...new Set(rooms.map((r) => r.floor))].sort((a, b) => a - b), [rooms]);
@@ -61,7 +89,7 @@ export function HomePlan({ rooms, presence, members, myId }: { rooms: Room[]; pr
   useEffect(() => {
     try {
       const v = localStorage.getItem(VIEW_KEY);
-      if (v === "3d" || v === "plano") setView(v);
+      if (v === "3d" || v === "plano" || v === "magia") setView(v);
     } catch {}
   }, []);
   function chooseView(v: View) {
@@ -71,7 +99,10 @@ export function HomePlan({ rooms, presence, members, myId }: { rooms: Room[]; pr
     } catch {}
   }
 
-  // Lo que marcan los demás aparece solo, sin recargar (cada 30 s mientras la pantalla está a la vista).
+  // Lo que marcan los demás aparece solo: al instante por tiempo real (con la 015) y, por las dudas,
+  // cada 30 s mientras la pantalla está a la vista.
+  useRealtimeRefresh("home_presence");
+  useRealtimeRefresh("home_pings");
   useEffect(() => {
     const t = setInterval(() => {
       if (document.visibilityState === "visible") router.refresh();
@@ -143,20 +174,27 @@ export function HomePlan({ rooms, presence, members, myId }: { rooms: Room[]; pr
           </ul>
 
           <div className="flex items-center gap-2">
-            <div className="flex rounded-md bg-line/60 p-1">
-              {(["3d", "plano"] as const).map((v) => (
+            <div className="flex min-w-0 flex-1 rounded-md bg-line/60 p-1">
+              {VIEWS.map(({ key, label, icon: Icon }) => (
                 <button
-                  key={v}
+                  key={key}
                   type="button"
-                  onClick={() => chooseView(v)}
-                  className={`flex min-h-9 items-center gap-1.5 rounded-sm px-3 text-sm font-semibold ${view === v ? "bg-surface text-ink shadow-soft" : "text-ink-faint"}`}
+                  onClick={() => chooseView(key)}
+                  aria-pressed={view === key}
+                  className={`flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-sm px-2 text-sm font-semibold ${view === key ? "bg-surface text-ink shadow-soft" : "text-ink-faint"}`}
                 >
-                  {v === "3d" ? <Box size={15} /> : <MapIcon size={15} />} {v === "3d" ? "3D" : "Plano"}
+                  <Icon size={15} className="shrink-0" /> {label}
                 </button>
               ))}
             </div>
-            <button type="button" onClick={() => setSketchOpen(true)} className="ml-auto flex min-h-9 items-center gap-1.5 rounded-md px-3 text-sm font-semibold text-coral">
-              <Sparkles size={15} /> Rehacer con IA
+            <button
+              type="button"
+              onClick={() => setSketchOpen(true)}
+              aria-label="Rehacer el plano con IA"
+              title="Rehacer con IA"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-coral"
+            >
+              <Sparkles size={18} />
             </button>
           </div>
 
@@ -175,8 +213,23 @@ export function HomePlan({ rooms, presence, members, myId }: { rooms: Room[]; pr
             </div>
           )}
 
-          <PlanCanvas rooms={floorRooms} members={members} presence={presence} view={view} onRoom={setSelected} />
-          <p className="text-center text-meta text-ink-faint">Tocá un ambiente para marcar que estás ahí o para editarlo.</p>
+          {view === "magia" ? (
+            <MaraudersMap
+              rooms={floorRooms}
+              allRooms={rooms}
+              members={members}
+              presence={presence}
+              moves={moves}
+              householdName={householdName}
+              onRoom={setSelected}
+              onPerson={setWhereFor}
+            />
+          ) : (
+            <PlanCanvas rooms={floorRooms} members={members} presence={presence} view={view} onRoom={setSelected} />
+          )}
+          <p className="text-center text-meta text-ink-faint">
+            {pings ? "Tocá a alguien para preguntarle dónde está, o un ambiente para marcar que estás ahí." : "Tocá un ambiente para marcar que estás ahí o para editarlo."}
+          </p>
           {error && <p className="text-sm text-danger">{error}</p>}
           <Fab onClick={edit.openNew} label="Agregar ambiente" />
         </>
@@ -227,37 +280,22 @@ export function HomePlan({ rooms, presence, members, myId }: { rooms: Room[]; pr
         )}
       </BottomSheet>
 
-      {/* Una persona: en qué ambiente está */}
+      {/* Una persona: preguntarle o llamarla, o marcar vos dónde está */}
       <BottomSheet open={Boolean(whereFor)} onClose={() => setWhereFor(null)} title={whereFor ? (whereFor.id === myId ? "¿Dónde estás?" : `¿Dónde está ${whereFor.name}?`) : ""}>
         {whereFor && (
-          <div className="flex flex-col gap-2">
-            {floors.map((f) => (
-              <div key={f} className="flex flex-col gap-2">
-                {floors.length > 1 && <p className="text-label font-bold uppercase tracking-wider text-ink-ghost">{floorLabel(f)}</p>}
-                <div className="grid grid-cols-2 gap-2">
-                  {rooms
-                    .filter((r) => r.floor === f)
-                    .map((r) => (
-                      <button
-                        key={r.id}
-                        type="button"
-                        disabled={busy}
-                        onClick={() => place(whereFor.id, r.id)}
-                        className={`flex min-h-11 items-center gap-2 rounded-md border-[1.5px] px-3 text-left text-sm font-semibold ${
-                          presenceOf(whereFor.id)?.room_id === r.id ? "border-coral bg-coral-soft text-ink" : "border-line text-ink-soft"
-                        }`}
-                      >
-                        <span>{ROOM_STYLE[r.kind].emoji}</span> <span className="min-w-0 truncate">{r.name}</span>
-                      </button>
-                    ))}
-                </div>
-              </div>
-            ))}
+          <div className="flex flex-col gap-3">
+            {whereFor.id !== myId && pings && (
+              <>
+                <PingActions key={whereFor.id} member={whereFor} pings={pings} rooms={rooms} meMarked={Boolean(myId && roomOf(myId))} />
+                <p className="mt-1 text-label font-bold uppercase tracking-wider text-ink-ghost">O marcá vos dónde está</p>
+              </>
+            )}
+            <RoomGrid rooms={rooms} current={presenceOf(whereFor.id)?.room_id} disabled={busy} onPick={(r) => place(whereFor.id, r.id)} />
             <button
               type="button"
               disabled={busy}
               onClick={() => place(whereFor.id, null)}
-              className="mt-2 flex min-h-11 items-center justify-center gap-2 rounded-md border-[1.5px] border-line text-sm font-semibold text-ink-soft"
+              className="mt-1 flex min-h-11 items-center justify-center gap-2 rounded-md border-[1.5px] border-line text-sm font-semibold text-ink-soft"
             >
               <LogOut size={15} /> Salió de casa
             </button>
@@ -267,6 +305,61 @@ export function HomePlan({ rooms, presence, members, myId }: { rooms: Room[]; pr
 
       <RoomEditor sheet={edit} rooms={rooms} defaultFloor={floor} onSaved={(f) => setFloor(f)} />
       <SketchSheet open={sketchOpen} onClose={() => setSketchOpen(false)} hasRooms={rooms.length > 0} onUsed={(f) => setFloor(f)} />
+    </div>
+  );
+}
+
+// ── "¿Dónde estás?" / "Vení para acá" ─────────────────────────────────────────────────────────
+// Le llega un aviso a esa persona y contesta con un toque (ver HomePingInbox). Acá se ve si contestó.
+function PingActions({ member, pings, rooms, meMarked }: { member: Member; pings: HomePing[]; rooms: Room[]; meMarked: boolean }) {
+  const router = useRouter();
+  const [sending, setSending] = useState<PingKind | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const last = pings.find((p) => p.to_member === member.id); // vienen de la más nueva a la más vieja
+
+  if (!member.user_id) {
+    return (
+      <p className="rounded-md bg-line/40 px-3 py-2 text-meta text-ink-soft">
+        {member.name} no tiene Lovebug en su celu, así que no le puede llegar el aviso. Marcá vos dónde está.
+      </p>
+    );
+  }
+
+  async function send(kind: PingKind) {
+    setSending(kind);
+    setError(null);
+    setNote(null);
+    const res = await sendHomePing(member.id, kind).catch(() => ({ ok: false as const, error: "No se pudo mandar. Probá de nuevo." }));
+    setSending(null);
+    if (!res.ok) return setError(res.error);
+    setNote(res.pushed ? `Listo, le llegó el aviso a ${member.name}.` : `Listo. ${member.name} no tiene los avisos activados: lo va a ver apenas abra Lovebug.`);
+    router.refresh();
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" disabled={Boolean(sending)} onClick={() => send("donde")} className="lb-btn min-h-12 !px-2 disabled:opacity-60">
+          {sending === "donde" ? "Mandando…" : "📍 ¿Dónde estás?"}
+        </button>
+        <button
+          type="button"
+          disabled={Boolean(sending)}
+          onClick={() => send("veni")}
+          className="min-h-12 rounded-md border-[1.5px] border-coral px-2 text-sm font-semibold text-coral disabled:opacity-60"
+        >
+          {sending === "veni" ? "Mandando…" : "🙋 Vení para acá"}
+        </button>
+      </div>
+      {!meMarked && <p className="text-meta text-ink-faint">Si marcás dónde estás vos, con “Vení para acá” le decimos adónde ir.</p>}
+      {note && <p className="text-meta font-semibold text-success">{note}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
+      {last && !note && (
+        <p className="text-meta text-ink-soft">
+          {pingAnswerText(last, member.name, rooms)} <span className="text-ink-faint">· {ago(last.answered_at ?? last.created_at)}</span>
+        </p>
+      )}
     </div>
   );
 }
