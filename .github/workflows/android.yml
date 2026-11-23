@@ -65,6 +65,11 @@ jobs:
             console.log("Con avisos (Firebase: " + json.project_info?.project_id + ")");
           ' "$F"
 
+      # El repo viejo (nazacura95/lovebug) llegó a la versión 3 y los celus la tienen instalada:
+      # Android no deja instalar una versión menor encima, así que acá se sigue desde ahí.
+      - name: Número de versión
+        run: echo "VERSION=$((GITHUB_RUN_NUMBER + 3))" >> "$GITHUB_ENV"
+
       - name: Dependencias y sync de Capacitor
         working-directory: mobile
         run: |
@@ -74,7 +79,7 @@ jobs:
       - name: Compilar el APK
         working-directory: mobile/android
         env:
-          VERSION_CODE: ${{ github.run_number }}
+          VERSION_CODE: ${{ env.VERSION }}
         run: |
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon --stacktrace
@@ -82,14 +87,14 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Lovebug-android-${{ github.run_number }}
+          name: Lovebug-android-${{ env.VERSION }}
           path: Lovebug.apk
 
       - name: Publicar en Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: android-${{ github.run_number }}
-          name: Lovebug para Android · versión ${{ github.run_number }}
+          tag_name: android-${{ env.VERSION }}
+          name: Lovebug para Android · versión ${{ env.VERSION }}
           make_latest: true
           files: Lovebug.apk
           body: |
@@ -103,5 +108,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/lovebug-android.apk
-          git commit -m "App Android: versión ${{ github.run_number }}" || exit 0
+          git commit -m "App Android: versión ${{ env.VERSION }}" || exit 0
           for i in 1 2 3; do git pull --rebase origin main && git push origin HEAD:main && break; sleep 5; done
