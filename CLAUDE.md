@@ -15,3 +15,5 @@ Desde noviembre 2026 no hay registro, ni alta de hogares, ni invitaciones, ni la
 - Copy en español rioplatense, cálido, nunca corporativo.
 - Qué se hizo en la sesión en la nube de septiembre 2026 (app Android, avisos, Casa, Mapa del Merodeador) y qué
   configuración falta: `docs/traspaso-app-lovebug-con-creditos.md`.
+- Sin IA: no hay `ANTHROPIC_API_KEY` (Naza no quiere pagar créditos de la API). Toda función con IA tiene que
+  esconderse sola sin la clave (como Contale y "Dibujarla con IA" en Casa).
