@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { DeletedRows } from "@/app/actions/undo";
-import type { ExpenseCategory, IncomeSource } from "@/lib/types";
+import type { ExpenseCategory, ExpenseStatus, IncomeSource, IncomeStatus, PaymentMethod } from "@/lib/types";
 
 function revalidate() {
   revalidatePath("/finanzas");
@@ -28,6 +28,9 @@ export type ExpenseInput = {
   is_fixed: boolean;
   event_id?: string | null;
   is_draft?: boolean;
+  status?: ExpenseStatus;
+  payment_method?: PaymentMethod | null;
+  notes?: string | null;
 };
 
 export async function saveExpense(input: ExpenseInput) {
@@ -41,6 +44,9 @@ export async function saveExpense(input: ExpenseInput) {
     is_fixed: input.is_fixed,
     event_id: input.event_id || null,
     is_draft: input.is_draft ?? false,
+    status: input.status === "pendiente" ? "pendiente" : "pagado",
+    payment_method: input.payment_method || null,
+    notes: input.notes?.trim() || null,
   };
   if (!row.description) throw new Error("Falta la descripción.");
   const { error } = input.id
@@ -48,6 +54,53 @@ export async function saveExpense(input: ExpenseInput) {
     : await supabase.from("expenses").insert(row);
   if (error) throw new Error(error.message);
   revalidate();
+}
+
+// Un toque en la lista: pagado ↔ pendiente (el medio de pago y el detalle se cambian editando).
+export async function setExpenseStatus(id: string, status: ExpenseStatus): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("expenses").update({ status: status === "pendiente" ? "pendiente" : "pagado" }).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidate();
+}
+
+// Mes nuevo: trae los gastos fijos del mes anterior (alquiler, servicios, cuotas…) como
+// pendientes, el mismo día del mes, con quién paga, el medio y el detalle. No repite los que ya
+// están cargados en el mes nuevo (mismo nombre).
+export async function copyFixedExpenses(fromMonth: string, toMonth: string): Promise<number> {
+  const supabase = await createClient();
+  const range = (month: string) => {
+    const d = new Date(`${month}T12:00:00-03:00`);
+    const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    return { start: month.slice(0, 8) + "01", end: month.slice(0, 8) + String(last).padStart(2, "0"), last };
+  };
+  const src = range(fromMonth);
+  const dst = range(toMonth);
+  const [{ data: fixed, error }, { data: already }] = await Promise.all([
+    supabase.from("expenses").select("*").eq("is_fixed", true).gte("spent_at", src.start).lte("spent_at", src.end),
+    supabase.from("expenses").select("description").gte("spent_at", dst.start).lte("spent_at", dst.end),
+  ]);
+  if (error) throw new Error(error.message);
+  const taken = new Set((already ?? []).map((e) => String(e.description).trim().toLowerCase()));
+  const rows = (fixed ?? [])
+    .filter((e) => !taken.has(String(e.description).trim().toLowerCase()))
+    .map((e) => ({
+      description: e.description,
+      amount: e.amount,
+      category: e.category,
+      paid_by: e.paid_by,
+      spent_at: dst.start.slice(0, 8) + String(Math.min(Number(String(e.spent_at).slice(8, 10)), dst.last)).padStart(2, "0"),
+      is_fixed: true,
+      is_draft: false,
+      status: "pendiente",
+      payment_method: e.payment_method,
+      notes: e.notes,
+    }));
+  if (rows.length === 0) return 0;
+  const { error: insertError } = await supabase.from("expenses").insert(rows);
+  if (insertError) throw new Error(insertError.message);
+  revalidate();
+  return rows.length;
 }
 
 export async function deleteExpense(id: string): Promise<DeletedRows> {
@@ -68,6 +121,8 @@ export type IncomeInput = {
   received_at: string;
   is_recurring: boolean;
   is_draft?: boolean;
+  status?: IncomeStatus;
+  notes?: string | null;
 };
 
 export async function saveIncome(input: IncomeInput) {
@@ -80,6 +135,8 @@ export async function saveIncome(input: IncomeInput) {
     received_at: input.received_at,
     is_recurring: input.is_recurring,
     is_draft: input.is_draft ?? false,
+    status: input.status === "por_cobrar" ? "por_cobrar" : "cobrado",
+    notes: input.notes?.trim() || null,
   };
   if (!row.description) throw new Error("Falta la descripción.");
   const { error } = input.id

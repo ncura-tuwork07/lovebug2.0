@@ -176,7 +176,12 @@ export type ExpenseCategory =
   | "servicios"
   | "alquiler"
   | "educacion"
+  | "mascotas"
+  | "impuestos"
   | "otro";
+
+export type ExpenseStatus = "pagado" | "pendiente";
+export type PaymentMethod = "efectivo" | "transferencia" | "debito" | "credito" | "mercadopago" | "otro";
 
 export type Expense = {
   id: string;
@@ -189,9 +194,14 @@ export type Expense = {
   event_id: string | null;
   receipt_path: string | null;
   is_draft: boolean; // "modo borrador": hipótesis para un mes futuro, no cuenta como real
+  status: ExpenseStatus; // pagado o pendiente (cuentas del mes que todavía hay que pagar)
+  payment_method: PaymentMethod | null;
+  notes: string | null; // detalle libre: número de cliente, a quién se le transfirió, etc.
 };
 
 export type IncomeSource = "sueldo" | "freelance" | "proyecto" | "anses" | "reintegro" | "otro";
+
+export type IncomeStatus = "cobrado" | "por_cobrar";
 
 export type Income = {
   id: string;
@@ -202,6 +212,8 @@ export type Income = {
   received_at: string;
   is_recurring: boolean;
   is_draft: boolean;
+  status: IncomeStatus;
+  notes: string | null;
 };
 
 // ── Cuentas recurrentes: estado por mes calendario ────────

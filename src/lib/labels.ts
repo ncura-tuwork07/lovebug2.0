@@ -11,6 +11,17 @@ export const EXPENSE_CATEGORIES: Record<ExpenseCategory, string> = {
   servicios: "Servicios",
   alquiler: "Alquiler / expensas",
   educacion: "Colegio / educación",
+  mascotas: "Mascotas",
+  impuestos: "Impuestos / monotributo",
+  otro: "Otro",
+};
+
+export const PAYMENT_METHODS: Record<import("@/lib/types").PaymentMethod, string> = {
+  transferencia: "Transferencia",
+  efectivo: "Efectivo",
+  debito: "Débito",
+  credito: "Tarjeta de crédito",
+  mercadopago: "Mercado Pago",
   otro: "Otro",
 };
 

@@ -18,8 +18,9 @@ export default async function FinanzasPage({ searchParams }: { searchParams: Pro
   const { from, to } = monthRange(viewDate);
   const isFuture = from > today;
   const isPast = to < today;
+  const prev = monthRange(addMonths(from, -1));
 
-  const [{ members, me }, incomesRes, expensesRes, goalsRes, budgetsRes, eventsRes, remindersRes, cyclesRes] = await Promise.all([
+  const [{ members, me }, incomesRes, expensesRes, goalsRes, budgetsRes, eventsRes, remindersRes, cyclesRes, prevFixedRes] = await Promise.all([
     getSessionContext(),
     supabase.from("incomes").select("*").gte("received_at", from).lte("received_at", to).order("received_at", { ascending: false }).order("created_at", { ascending: false }),
     supabase.from("expenses").select("*").gte("spent_at", from).lte("spent_at", to).order("spent_at", { ascending: false }).order("created_at", { ascending: false }),
@@ -29,6 +30,8 @@ export default async function FinanzasPage({ searchParams }: { searchParams: Pro
     // Si tiene fecha de fin ("hasta junio del año que viene"), deja de listarse pasado ese mes.
     supabase.from("reminders").select("*").eq("repeat", "monthly").or(`repeat_until.is.null,repeat_until.gte.${from}`).order("title"),
     supabase.from("bill_cycles").select("*").eq("month", from),
+    // Para ofrecer "Traer los gastos fijos del mes anterior" en un mes que todavía no los tiene.
+    supabase.from("expenses").select("id", { count: "exact", head: true }).eq("is_fixed", true).gte("spent_at", prev.from).lte("spent_at", prev.to),
   ]);
   const monthLabel = new Date(`${from}T12:00:00-03:00`).toLocaleDateString("es-AR", {
     month: "long",
@@ -36,6 +39,7 @@ export default async function FinanzasPage({ searchParams }: { searchParams: Pro
     timeZone: "America/Argentina/Buenos_Aires",
   });
 
+  const prevLabel = new Date(`${prev.from}T12:00:00-03:00`).toLocaleDateString("es-AR", { month: "long", timeZone: "America/Argentina/Buenos_Aires" });
   const cyclesByReminder = new Map((cyclesRes.data ?? []).map((c) => [c.reminder_id, c]));
   const bills: BillRow[] = (remindersRes.data ?? []).map((reminder) => ({ reminder, cycle: cyclesByReminder.get(reminder.id) ?? null }));
 
@@ -62,6 +66,7 @@ export default async function FinanzasPage({ searchParams }: { searchParams: Pro
         isFuture={isFuture}
         isPast={isPast}
         bills={bills}
+        prevFixed={{ month: prev.from, label: prevLabel, count: prevFixedRes.count ?? 0 }}
       />
     </div>
   );
