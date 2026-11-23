@@ -65,6 +65,7 @@ export default async function CasaPage() {
             householdName={household?.name ?? null}
             pings={pingsReady ? ((pingsRes.data ?? []) as HomePing[]) : null}
             moves={pingsReady ? ((movesRes.data ?? []) as HomeMove[]) : []}
+            ai={Boolean(process.env.ANTHROPIC_API_KEY)}
           />
         </>
       )}

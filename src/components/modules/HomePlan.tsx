@@ -65,6 +65,7 @@ export function HomePlan({
   householdName = null,
   pings = null,
   moves = [],
+  ai = false,
 }: {
   rooms: Room[];
   presence: Presence[];
@@ -73,6 +74,7 @@ export function HomePlan({
   householdName?: string | null;
   pings?: HomePing[] | null; // null = todavía no se corrió la migración 015
   moves?: HomeMove[];
+  ai?: boolean; // sin clave de Anthropic, la casa se arma solo a mano
 }) {
   const router = useRouter();
   const [view, setView] = useState<View>("3d");
@@ -137,13 +139,20 @@ export function HomePlan({
         <section className="lb-card flex flex-col gap-3">
           <p className="font-display text-h2 font-bold text-ink">Dibujemos tu casa 🏡</p>
           <p className="text-meta text-ink-faint">
-            Mandame fotos de los ambientes y contame cómo es (escrito o hablando), y armo el plano. O lo hacés vos, ambiente por ambiente. Después cada uno marca en qué
-            parte de la casa está.
+            {ai
+              ? "Mandame fotos de los ambientes y contame cómo es (escrito o hablando), y armo el plano. O lo hacés vos, ambiente por ambiente. Después cada uno marca en qué parte de la casa está."
+              : "Armala ambiente por ambiente: cocina, living, cada cuarto. Después cada uno marca en qué parte de la casa está."}
           </p>
-          <button type="button" onClick={() => setSketchOpen(true)} className="lb-btn flex min-h-11 items-center justify-center gap-2">
-            <Sparkles size={18} /> Dibujarla con IA
-          </button>
-          <button type="button" onClick={edit.openNew} className="min-h-11 rounded-md border-[1.5px] border-line text-sm font-semibold text-ink-soft">
+          {ai && (
+            <button type="button" onClick={() => setSketchOpen(true)} className="lb-btn flex min-h-11 items-center justify-center gap-2">
+              <Sparkles size={18} /> Dibujarla con IA
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={edit.openNew}
+            className={ai ? "min-h-11 rounded-md border-[1.5px] border-line text-sm font-semibold text-ink-soft" : "lb-btn min-h-11"}
+          >
             Armarla a mano
           </button>
         </section>
@@ -187,15 +196,17 @@ export function HomePlan({
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={() => setSketchOpen(true)}
-              aria-label="Rehacer el plano con IA"
-              title="Rehacer con IA"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-coral"
-            >
-              <Sparkles size={18} />
-            </button>
+            {ai && (
+              <button
+                type="button"
+                onClick={() => setSketchOpen(true)}
+                aria-label="Rehacer el plano con IA"
+                title="Rehacer con IA"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-coral"
+              >
+                <Sparkles size={18} />
+              </button>
+            )}
           </div>
 
           {floors.length > 1 && (
