@@ -4,7 +4,8 @@ import { runJob } from "@/lib/notify";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-// Vercel Cron llama a estas rutas con "Authorization: Bearer $CRON_SECRET".
+// Vercel Cron (diaria y semanal) y GitHub Actions (cada hora, ver .github/workflows/cron-hourly.yml)
+// llaman a estas rutas con "Authorization: Bearer $CRON_SECRET".
 export async function GET(request: NextRequest, { params }: { params: Promise<{ job: string }> }) {
   const secret = process.env.CRON_SECRET;
   const auth = request.headers.get("authorization");

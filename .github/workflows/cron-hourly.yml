@@ -1,0 +1,29 @@
+name: Avisos de cada hora
+
+# El plan gratis de Vercel (Hobby) solo permite tareas automáticas una vez por día, así que la de
+# cada hora ("En 1 hora sale … 🚗", antes de cada traslado de Logística) la dispara GitHub.
+# Necesita, en Settings → Secrets and variables → Actions del repo:
+#   - Secret   CRON_SECRET: el mismo valor que la variable CRON_SECRET de Vercel.
+#   - Variable APP_URL:     la dirección de la app en Vercel (ej. https://lovebug2.vercel.app).
+on:
+  schedule:
+    - cron: "7 * * * *" # minuto 7 de cada hora (en el minuto 0 GitHub suele demorarse más)
+  workflow_dispatch:
+
+jobs:
+  hourly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Llamar a /api/cron/hourly
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          if [ -z "$CRON_SECRET" ] || [ -z "$APP_URL" ]; then
+            echo "Falta configurar CRON_SECRET o APP_URL en el repo; no se llama a la app."
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error --max-time 90 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "${APP_URL%/}/api/cron/hourly"
