@@ -13,6 +13,7 @@ export const EXPENSE_CATEGORIES: Record<ExpenseCategory, string> = {
   educacion: "Colegio / educación",
   mascotas: "Mascotas",
   impuestos: "Impuestos / monotributo",
+  deudas: "Deudas",
   otro: "Otro",
 };
 

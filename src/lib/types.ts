@@ -178,6 +178,7 @@ export type ExpenseCategory =
   | "educacion"
   | "mascotas"
   | "impuestos"
+  | "deudas"
   | "otro";
 
 export type ExpenseStatus = "pagado" | "pendiente";

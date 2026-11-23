@@ -1,5 +1,5 @@
 -- Lovebug — base completa desde cero, en un solo paso.
--- Para un proyecto de Supabase nuevo y vacío: es schema.sql + todas las migraciones (003 a 017)
+-- Para un proyecto de Supabase nuevo y vacío: es schema.sql + todas las migraciones (003 a 018)
 -- en orden, sin el alta de las cuentas viejas. Se pega entero en el SQL Editor y se da Run.
 -- Antes: crear las dos cuentas en Authentication → Users (cada una con su contraseña).
 -- Se arma juntando esos archivos: si cambia una migración, hay que volver a armarlo.
@@ -25,7 +25,7 @@ alter table family_members add column if not exists user_id uuid references auth
 alter table family_members add column if not exists sort_order int not null default 0;
 create unique index if not exists family_members_user_id_key on family_members(user_id) where user_id is not null;
 
--- (Las cuentas de Naza y Jaz se vinculan al final de este archivo, por email.)
+-- (Las cuentas de Naza y Jaz se vinculan aparte, por email, después de crearlas.)
 
 -- ───────────────────────── Calendario ─────────────────────────
 create table if not exists calendar_events (
@@ -1069,3 +1069,10 @@ alter table incomes drop constraint if exists incomes_status_check;
 alter table incomes add constraint incomes_status_check check (status in ('cobrado', 'por_cobrar'));
 
 alter table incomes add column if not exists notes text;
+
+
+-- ════════════════ migrations/018_deudas.sql ════════════════
+-- Lovebug — migración 018: categoría "Deudas" para los gastos (lo que se devuelve cada mes a alguien).
+alter table expenses drop constraint if exists expenses_category_check;
+alter table expenses add constraint expenses_category_check
+  check (category in ('super', 'casa', 'chicos', 'auto', 'salud', 'ocio', 'ropa', 'servicios', 'alquiler', 'educacion', 'mascotas', 'impuestos', 'deudas', 'otro'));
