@@ -12,3 +12,5 @@ familia, pareja o grupo de amigos crea su hogar, invita con un link y ve solo lo
 - Admin (Naza y Jaz, tabla `app_admins`): `/admin` con métricas agregadas de `profiles` y `usage_events`.
 - Tokens de diseño y clases `lb-*` en `src/app/globals.css`; no usar variantes `dark:`.
 - Copy en español rioplatense, cálido, nunca corporativo.
+- Qué se hizo en la sesión en la nube de septiembre 2026 (app Android, avisos, Casa, Mapa del Merodeador) y qué
+  configuración falta: `docs/traspaso-app-lovebug-con-creditos.md`.
