@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function PerfilPage() {
   const { user, household, members, me } = await getSessionContext();
   if (!user) redirect("/login");
-  if (!household) redirect("/empezar");
+  if (!household) redirect("/auth/salir");
   if (members.length === 0) redirect("/familia");
   if (me) redirect("/"); // ya hay un perfil elegido para esta sesión
 

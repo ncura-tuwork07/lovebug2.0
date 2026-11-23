@@ -13,7 +13,11 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(
-    params.get("error") === "link" ? "El link del email venció o ya se usó. Pedí uno nuevo desde “¿Olvidaste tu contraseña?”." : null
+    params.get("error") === "link"
+      ? "El link del email venció o ya se usó. Pedí uno nuevo desde “¿Olvidaste tu contraseña?”."
+      : params.get("error") === "sin-hogar"
+        ? "Esa cuenta no tiene acceso a Lovebug."
+        : null
   );
   const [loading, setLoading] = useState(false);
 
@@ -46,14 +50,7 @@ function LoginForm() {
 
   return (
     <AuthShell
-      footer={
-        <>
-          <AuthLink href="/restablecer">¿Olvidaste tu contraseña?</AuthLink>
-          <span>
-            ¿No tenés cuenta? <AuthLink href="/registro">Creá tu hogar</AuthLink>
-          </span>
-        </>
-      }
+      footer={<AuthLink href="/restablecer">¿Olvidaste tu contraseña?</AuthLink>}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <AuthInput type="email" required autoComplete="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />

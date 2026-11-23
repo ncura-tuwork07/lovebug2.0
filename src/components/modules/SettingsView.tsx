@@ -3,13 +3,12 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookHeart, Check, ChevronRight, Copy, LogOut, RefreshCw, Share2, ShieldCheck, Sparkle, Users } from "lucide-react";
+import { BookHeart, Check, ChevronRight, LogOut, ShieldCheck, Sparkle, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { regenerateInviteCode, setModuleEnabled, updateHouseholdName } from "@/app/actions/household";
+import { setModuleEnabled, updateHouseholdName } from "@/app/actions/household";
 import { InspirationSetup } from "@/components/InspirationSetup";
 import { traditionOf } from "@/lib/traditions";
 import { MODULES, isModuleEnabled } from "@/lib/modules";
-import { inviteLink } from "@/lib/app";
 import type { Household, Member, UserPasskey } from "@/lib/types";
 import { MemberAvatar } from "@/components/ui/MemberChip";
 import { PushSetup } from "@/components/PushSetup";
@@ -51,13 +50,8 @@ export function SettingsView({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState(household.name);
-  const [code, setCode] = useState(household.invite_code);
-  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nameSaved, setNameSaved] = useState(false);
-  // Siempre el link público, aunque estemos probando en localhost.
-  const link = inviteLink(code);
-  const shareText = `Te invito a nuestro hogar “${household.name}” en Lovebug 🐞, la app para organizarnos entre todos. Entrá con este link: ${link}`;
 
   function act(fn: () => Promise<unknown>) {
     setError(null);
@@ -69,28 +63,6 @@ export function SettingsView({
         setError(e instanceof Error ? e.message : "No pudimos guardarlo.");
       }
     });
-  }
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setError("No pudimos copiar. Seleccioná el link y copialo a mano.");
-    }
-  }
-
-  async function share() {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "Lovebug", text: shareText });
-      } catch {
-        /* el usuario canceló */
-      }
-    } else {
-      await copy();
-    }
   }
 
   return (
@@ -134,46 +106,11 @@ export function SettingsView({
           ))}
         </ul>
         <p className="mt-2 text-meta text-ink-faint">
-          Los que no tienen cuenta usan este mismo login: al entrar eligen su perfil, como en Netflix. Agregalos sin invitar a nadie.
+          Los que no tienen cuenta usan este mismo login: al entrar eligen su perfil, como en Netflix.
         </p>
         <Link href="/familia" className="mt-3 inline-block text-sm font-semibold text-coral">
           Agregar integrantes →
         </Link>
-      </section>
-
-      {/* Invitación */}
-      <section id="invitar" className="lb-card scroll-mt-4">
-        <h2 className="text-h2 mb-1 flex items-center gap-2 font-display uppercase tracking-wide text-success">
-          <Share2 size={16} /> Invitar con su propio login
-        </h2>
-        <p className="mb-3 text-body text-ink-soft">
-          Para quien prefiera entrar con su propio email y contraseña (en vez de compartir el tuyo). Ve todo lo mismo que vos: pareja, familia,
-          amigos o compañeros de casa. Compartilo solo con quien quieras adentro.
-        </p>
-        <div className="rounded-md bg-field px-3 py-2">
-          <p className="text-label font-bold uppercase tracking-wider text-ink-ghost">Código</p>
-          <p className="font-display text-2xl font-bold tracking-[0.25em] text-ink">{code}</p>
-          <p className="mt-1 break-all text-meta text-ink-faint">{link}</p>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" onClick={share} className="lb-btn flex items-center gap-2 !px-4">
-            <Share2 size={16} /> Compartir
-          </button>
-          <button type="button" onClick={copy} className="flex min-h-11 items-center gap-2 rounded-md border-[1.5px] border-line px-4 text-sm font-semibold text-ink">
-            {copied ? <Check size={16} className="text-success" /> : <Copy size={16} />} {copied ? "Copiado" : "Copiar link"}
-          </button>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => {
-              if (!confirm("¿Renovar el código? El link anterior deja de funcionar.")) return;
-              act(async () => setCode(await regenerateInviteCode()));
-            }}
-            className="flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-semibold text-ink-faint disabled:opacity-50"
-          >
-            <RefreshCw size={16} /> Renovar
-          </button>
-        </div>
       </section>
 
       {/* Módulos */}

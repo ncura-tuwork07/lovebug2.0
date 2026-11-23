@@ -2,47 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { FALLBACK_ROLE } from "@/lib/roles";
 import type { HouseholdSettings, Tradition } from "@/lib/types";
-
-const COLORS = ["#3B82F6", "#EC4899", "#10B981", "#F59E0B", "#8B5CF6", "#0EA5A5"];
-
-function friendly(message: string): string {
-  if (/Ya pertenecés/.test(message)) return "Ya pertenecés a un hogar.";
-  if (/inválido/.test(message)) return "Ese código de invitación no existe. Revisalo y probá de nuevo.";
-  if (/No autenticado/.test(message)) return "Tenés que iniciar sesión primero.";
-  return message;
-}
-
-// Crea el hogar y el primer integrante (el usuario logueado).
-export async function createHousehold(input: { name: string; memberName: string; role?: string }): Promise<void> {
-  const supabase = await createClient();
-  const name = input.name.trim();
-  const memberName = input.memberName.trim();
-  if (!name) throw new Error("Ponele un nombre al hogar.");
-  if (!memberName) throw new Error("Falta tu nombre.");
-  const { error } = await supabase.rpc("create_household", { p_name: name, p_member_name: memberName, p_color: COLORS[0], p_role: input.role?.trim() || FALLBACK_ROLE });
-  if (error) throw new Error(friendly(error.message));
-  revalidatePath("/", "layout");
-}
-
-// Se suma a un hogar existente con el código de invitación.
-export async function joinHousehold(input: { code: string; memberName: string; role?: string }): Promise<void> {
-  const supabase = await createClient();
-  const code = input.code.trim().toUpperCase();
-  const memberName = input.memberName.trim();
-  if (!code) throw new Error("Falta el código de invitación.");
-  if (!memberName) throw new Error("Falta tu nombre.");
-  const { error } = await supabase.rpc("join_household", { p_code: code, p_member_name: memberName, p_color: COLORS[1], p_role: input.role?.trim() || FALLBACK_ROLE });
-  if (error) throw new Error(friendly(error.message));
-  // Recién ahora vemos al resto del hogar: elegimos un color que nadie use.
-  const [{ data: members }, { data: auth }] = await Promise.all([supabase.from("family_members").select("id, color, user_id"), supabase.auth.getUser()]);
-  const mine = members?.find((m) => m.user_id === auth.user?.id);
-  const used = new Set(members?.filter((m) => m.id !== mine?.id).map((m) => m.color));
-  const free = COLORS.find((c) => !used.has(c));
-  if (mine && free && free !== mine.color) await supabase.from("family_members").update({ color: free }).eq("id", mine.id);
-  revalidatePath("/", "layout");
-}
 
 export async function updateHouseholdName(name: string): Promise<void> {
   const supabase = await createClient();
@@ -69,15 +29,6 @@ export async function setModuleEnabled(key: string, enabled: boolean): Promise<v
   await mergeSettings((s) => ({ ...s, modules: { ...(s.modules ?? {}), [key]: enabled } }));
 }
 
-
-
-export async function regenerateInviteCode(): Promise<string> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("regenerate_invite_code");
-  if (error) throw new Error(error.message);
-  revalidatePath("/ajustes");
-  return data as string;
-}
 
 // Qué ver cada mañana en Hoy: tradición (o ninguna) y horóscopo.
 export async function setInspiration(input: { tradition: Tradition; horoscope: boolean; otherLabel?: string }): Promise<void> {

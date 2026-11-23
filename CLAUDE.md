@@ -1,12 +1,13 @@
 # Lovebug
 
-App de organización familiar compartida (PWA). Nació para Nazareno y Jazmín y ahora es multi-hogar: cualquier
-familia, pareja o grupo de amigos crea su hogar, invita con un link y ve solo lo suyo.
+App de organización familiar compartida (PWA y app Android), **solo para Naza y Jaz** (y sus hijos como perfiles).
+Desde noviembre 2026 no hay registro, ni alta de hogares, ni invitaciones, ni landing pública: no volver a agregarlos.
 
 - Next.js 15 (App Router) + TypeScript + Tailwind v4 + Supabase. Deploy en Vercel (preset Next.js).
-- Rutas: `src/app/(app)` (logueado, con header y barra) y `src/app/(public)` (landing, login, registro, invitación).
-  `middleware.ts` protege todo salvo las públicas; `/` es la landing para anónimos (rewrite a `/bienvenida`).
-- Hogares: `households` + `household_id` en cada tabla con default `current_household_id()`; RLS por hogar.
+- Rutas: `src/app/(app)` (logueado, con header y barra) y `src/app/(public)` (login, recuperar contraseña, perfil, pagar).
+  `middleware.ts` protege todo salvo las públicas; sin sesión todo manda a `/login`. Una cuenta sin hogar va a
+  `/auth/salir` (cierra la sesión).
+- Hogares (quedó de cuando era multi-hogar; hoy hay uno solo): `households` + `household_id` en cada tabla con default `current_household_id()`; RLS por hogar.
   Migraciones en `supabase/migrations/` (se corren a mano en el SQL Editor). Storage: rutas `<household_id>/<member_id>/...`.
 - Roles de integrantes: texto libre (`role`) + `is_child` para los menores. Módulos activables en `households.settings`.
 - Admin (Naza y Jaz, tabla `app_admins`): `/admin` con métricas agregadas de `profiles` y `usage_events`.

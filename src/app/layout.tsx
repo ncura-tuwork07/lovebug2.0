@@ -27,6 +27,8 @@ export const metadata: Metadata = {
   description: "La familia, siempre en foco. Organización familiar compartida: calendario, logística, finanzas, compras, menú y más.",
   manifest: "/manifest.json",
   applicationName: "Lovebug",
+  // Es solo de Naza y Jaz: que los buscadores no la listen.
+  robots: { index: false, follow: false },
   appleWebApp: {
     capable: true,
     title: "Lovebug",

@@ -59,7 +59,6 @@ export default async function HoyPage() {
   const firstSteps: FirstStep[] = [
     { key: "familia", label: "Sumá a tu familia", hint: "Cada uno con su color, su rol y sus datos.", href: "/familia", done: members.length >= 2 },
     { key: "cumples", label: "Cargá los cumpleaños", hint: "Así el calendario te avisa con tiempo para el regalo.", href: "/familia", done: members.length >= 2 && members.every((m) => m.birthday) },
-    { key: "invitar", label: "Invitá a los que viven con vos", hint: "Con un link, para que entren desde su celu.", href: "/ajustes#invitar", done: members.filter((m) => m.user_id).length >= 2 },
     { key: "huella", label: "Activá la huella", hint: "Para que nadie más pueda abrir Lovebug en tu celu.", href: "/ajustes#huella", done: passkeys.length > 0 },
     { key: "avisos", label: "Activá los avisos", hint: "Vencimientos, traslados y cumples, directo al celu.", href: "/ajustes#avisos", done: false },
   ];

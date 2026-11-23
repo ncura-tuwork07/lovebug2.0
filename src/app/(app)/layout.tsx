@@ -16,11 +16,11 @@ import { todayAR } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
-// Layout de la app logueada: exige sesión y un hogar; si falta el hogar, manda a crearlo o unirse.
+// Layout de la app logueada: exige sesión y el hogar (sin hogar, se cierra la sesión: no se crean hogares nuevos).
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, me, household, members } = await getSessionContext();
   if (!user) redirect("/login");
-  if (!household) redirect("/empezar");
+  if (!household) redirect("/auth/salir");
   if (!me) redirect(members.length > 1 ? "/perfil" : "/familia");
 
   return (

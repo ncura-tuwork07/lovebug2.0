@@ -1,10 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/Logo";
-import { RolePicker } from "@/components/ui/Field";
-import { ROLE_SUGGESTIONS } from "@/lib/roles";
 
-// Fondo oscuro fijo (no cambia con el tema) para login, registro e invitaciones.
+// Fondo oscuro fijo (no cambia con el tema) para entrar y recuperar la contraseña.
 export function AuthShell({ title, subtitle, children, footer }: { title?: string; subtitle?: string; children: ReactNode; footer?: ReactNode }) {
   return (
     <div className="lb-on-dark flex min-h-dvh flex-col items-center justify-center gap-7 bg-[#1E293B] px-6 py-10">
@@ -38,8 +36,4 @@ export function AuthLink({ href, children }: { href: string; children: ReactNode
       {children}
     </Link>
   );
-}
-
-export function RoleInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return <RolePicker options={ROLE_SUGGESTIONS} defaultValue={value} onChange={onChange} placeholder="Tu rol (Mamá, Papá, Pareja, Amigo…)" ariaLabel="Tu rol" />;
 }

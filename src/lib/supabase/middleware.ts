@@ -3,10 +3,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isSupabaseConfigured } from "./is-configured";
 import { APP_LOCK_COOKIE, APP_LOCK_TTL_SECONDS, appLockEnabled, signUnlock, verifyUnlock } from "@/lib/appLock";
 
-// Rutas que se pueden ver sin sesión.
-const PUBLIC_PREFIXES = ["/bienvenida", "/login", "/registro", "/invitacion", "/restablecer", "/auth", "/pagar"];
+// Rutas que se pueden ver sin sesión. Lovebug es solo de Naza y Jaz: no hay registro, ni alta de
+// hogares, ni invitaciones; lo único público es entrar, recuperar la contraseña y el link de
+// "pagar" de una división de gastos (para invitados de un evento, sin cuenta).
+const PUBLIC_PREFIXES = ["/login", "/restablecer", "/auth", "/pagar"];
 // Con sesión iniciada, estas rutas mandan directo a la app.
-const GUEST_ONLY = ["/bienvenida", "/login", "/registro"];
+const GUEST_ONLY = ["/login"];
 // La pantalla del bloqueo por huella: nunca se bloquea a sí misma.
 const LOCK_PATH = "/bloqueo";
 
@@ -70,12 +72,7 @@ export async function updateSession(request: NextRequest) {
   };
 
   if (!userId) {
-    // Sin sesión, la raíz muestra la landing (misma URL, sin redirigir).
-    if (pathname === "/") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/bienvenida";
-      return NextResponse.rewrite(url);
-    }
+    // Sin sesión, todo (también la raíz) manda a entrar.
     if (startsWithAny(pathname, PUBLIC_PREFIXES)) return supabaseResponse;
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -83,7 +80,7 @@ export async function updateSession(request: NextRequest) {
     return redirectTo(url);
   }
 
-  // Solo al ver la página: las server actions de /login y /registro (POST) corren justo después de
+  // Solo al ver la página: las server actions de /login (POST) corren justo después de
   // iniciar sesión, y si las redirigimos acá nunca se ejecutan (por ejemplo, marcar el celu como
   // desbloqueado después de entrar con la contraseña).
   if (request.method === "GET" && startsWithAny(pathname, GUEST_ONLY)) {
