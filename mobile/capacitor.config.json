@@ -3,7 +3,7 @@
   "appName": "Lovebug",
   "webDir": "www",
   "server": {
-    "url": "https://lovebug-wheat.vercel.app",
+    "url": "https://lovebug20.vercel.app",
     "androidScheme": "https",
     "errorPath": "offline.html"
   },

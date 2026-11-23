@@ -1,7 +1,7 @@
 name: App Android
 
 # Compila la app de Android (Capacitor) cuando cambia algo en mobile/ y la deja en
-# https://lovebug-wheat.vercel.app/lovebug-android.apk (y en Releases del repo).
+# https://lovebug20.vercel.app/lovebug-android.apk (y en Releases del repo).
 on:
   push:
     branches: [main]
